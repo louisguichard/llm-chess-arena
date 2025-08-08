@@ -25,7 +25,7 @@ def run_tournament(models, total_matches):
     for i in range(total_matches):
         # Randomly select two models
         white_model, black_model = random.sample(models, 2)
-        print(f"Game n°{i + 1}: {white_model} (White) vs {black_model} (Black)")
+        print(f"\nGame n°{i + 1}: {white_model} (White) vs {black_model} (Black)")
 
         # Create clients
         white = OpenRouterClient(white_model)

@@ -6,14 +6,14 @@ import time
 
 import chess
 import chess.pgn
+from prompts import SYSTEM_PROMPT, build_user_prompt
 
-SYSTEM_PROMPT = """You are a professional chess player. After careful consideration, announce your next move by ending your response with "Move: your_move" where your_move is your move in UCI notation (e.g., e2e4, e7e5, e1g1, or e7e8q). Do not add anything after announcing your move: no punctuation, no explanation, nothing else."""
 PGN_DIR = "games"
 if not os.path.isdir(PGN_DIR):
     os.makedirs(PGN_DIR, exist_ok=True)
 
 
-def play_game(white, black, round_no=1, max_fullmoves=200):
+def play_game(white, black, round_no=1, max_moves=200):
     """Play a single game and return result.
 
     Result can be either:
@@ -34,15 +34,15 @@ def play_game(white, black, round_no=1, max_fullmoves=200):
     game.headers["Black"] = black.name()
     game.headers["Date"] = time.strftime("%Y.%m.%d")
 
-    while not board.is_game_over() and board.fullmove_number <= max_fullmoves:
-        actor = white if board.turn == chess.WHITE else black
+    while not board.is_game_over() and board.fullmove_number <= max_moves:
+        player = white if board.turn == chess.WHITE else black
 
-        proposal = actor.get_next_move(
+        move = player.get_next_move(
             SYSTEM_PROMPT,
-            f"Position (FEN): {board.fen()}\nPlease end your response with 'Move: your_move' where your_move is your move in UCI notation (e.g., e2e4, e7e5, e1g1, or e7e8q).",
+            build_user_prompt(board),
         )
-        # If the actor can't provide a move, we treat it as a resignation
-        if not proposal:
+        # If the player can't provide a move, we treat it as a resignation
+        if not move:
             # Resign if no move returned
             if board.turn == chess.WHITE:
                 game.headers["Result"] = "0-1"
@@ -52,9 +52,19 @@ def play_game(white, black, round_no=1, max_fullmoves=200):
                 game.headers["Termination"] = "Black resigned (no move)"
             break
 
+        # Allow explicit resignation string from the model
+        if isinstance(move, str) and move.strip().lower() == "resign":
+            if board.turn == chess.WHITE:
+                game.headers["Result"] = "0-1"
+                game.headers["Termination"] = "White resigned"
+            else:
+                game.headers["Result"] = "1-0"
+                game.headers["Termination"] = "Black resigned"
+            break
+
         try:
             # Convert the proposed UCI string into a chess.Move
-            move = chess.Move.from_uci(proposal)
+            move = chess.Move.from_uci(move)
         except Exception:
             move = None
 
@@ -62,14 +72,10 @@ def play_game(white, black, round_no=1, max_fullmoves=200):
             # Illegal move means resignation for the side to move
             if board.turn == chess.WHITE:
                 game.headers["Result"] = "0-1"
-                game.headers["Termination"] = (
-                    f"White resigned (illegal move: {proposal})"
-                )
+                game.headers["Termination"] = f"White resigned (illegal move: {move})"
             else:
                 game.headers["Result"] = "1-0"
-                game.headers["Termination"] = (
-                    f"Black resigned (illegal move: {proposal})"
-                )
+                game.headers["Termination"] = f"Black resigned (illegal move: {move})"
             break
 
         board.push(move)
