@@ -1,0 +1,10 @@
+# One model id per line
+
+# google/gemini-2.5-pro
+google/gemini-2.5-flash
+# x-ai/grok-4
+x-ai/grok-3-mini
+# openai/gpt-4o
+openai/gpt-oss-120b
+# anthropic/claude-opus-4
+anthropic/claude-sonnet-4
