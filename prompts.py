@@ -41,7 +41,7 @@ def board_to_ascii(board):
     return "\n".join(rank_labels_rows + ["   " + file_labels])
 
 
-def san_history_from_board(board: chess.Board) -> str:
+def san_history_from_board(board):
     """Return the SAN move history for the current board position.
 
     This reconstructs the SAN strings from the move stack without mutating the
@@ -82,4 +82,20 @@ def build_user_prompt(board):
         f"Game so far (SAN): {san_history_str}\n"
         f"ASCII board (ranks 8→1, files a→h):\n{ascii_board_str}\n\n"
         "Respond as JSON following the schema."
+    )
+
+
+def build_retry_prompt(board, reason):
+    """Return a retry prompt.
+
+    This is used when the previous reply was malformed or contained an illegal move.
+    """
+    san_history_str = san_history_from_board(board)
+    ascii_board_str = board_to_ascii(board)
+    return (
+        f"FEN: {board.fen()}\n"
+        f"Game so far (SAN): {san_history_str}\n"
+        f"ASCII board (ranks 8→1, files a→h):\n{ascii_board_str}\n\n"
+        f"Previous response issue: {reason}\n"
+        "Retry once: respond with exactly one JSON object following the schema, no extra text."
     )
