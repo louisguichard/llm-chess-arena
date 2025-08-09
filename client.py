@@ -35,6 +35,28 @@ class OpenRouterClient:
             completion = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
+                response_format={
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": "chess_move",
+                        "strict": True,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "rationale": {
+                                    "type": "string",
+                                    "description": "Rationale for the move",
+                                },
+                                "move": {
+                                    "type": "string",
+                                    "description": "One legal UCI move like 'e2e4' or 'resign'",
+                                },
+                            },
+                            "required": ["rationale", "move"],
+                            "additionalProperties": False,
+                        },
+                    },
+                },
             )
             return completion.choices[0].message.content
         except Exception as e:
