@@ -4,7 +4,7 @@ import argparse
 import random
 from dotenv import load_dotenv
 
-from match import play_game
+from match import ChessGame
 from client import OpenRouterClient
 from ratings import RatingsTable
 from utils import read_models_from_file
@@ -32,7 +32,8 @@ def run_tournament(models, total_matches):
         black = OpenRouterClient(black_model)
 
         # Play game
-        result = play_game(white, black, round_no=i)
+        game = ChessGame(white, black)
+        result = game.play(max_retries=1)
         print(f"Game n°{i + 1} result: {result}")
 
         # Update ratings

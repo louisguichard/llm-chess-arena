@@ -1,6 +1,19 @@
 """Prompts for the LLM."""
 
 import chess
+from enum import Enum
+
+
+class RetryReason(Enum):
+    """Enumeration of retry reasons with custom messages."""
+
+    EMPTY_RESPONSE = "\nPlease answer with a JSON object following the schema."
+    INVALID_JSON = "\nPlease answer with a JSON object following the schema."
+    ILLEGAL_MOVE = "\nPlease provide a legal UCI move."
+    MISSING_MOVE_KEY = "\nPlease answer with a JSON object following the schema."
+    INVALID_UCI_FORMAT = (
+        "\nPlease be sure to provide your move in UCI format (e.g., 'e2e4' or 'e7e8q')."
+    )
 
 
 def board_to_ascii(board):
@@ -82,20 +95,4 @@ def build_user_prompt(board):
         f"Game so far (SAN): {san_history_str}\n"
         f"ASCII board (ranks 8→1, files a→h):\n{ascii_board_str}\n\n"
         "Respond as JSON following the schema."
-    )
-
-
-def build_retry_prompt(board, reason):
-    """Return a retry prompt.
-
-    This is used when the previous reply was malformed or contained an illegal move.
-    """
-    san_history_str = san_history_from_board(board)
-    ascii_board_str = board_to_ascii(board)
-    return (
-        f"FEN: {board.fen()}\n"
-        f"Game so far (SAN): {san_history_str}\n"
-        f"ASCII board (ranks 8→1, files a→h):\n{ascii_board_str}\n\n"
-        f"Previous response issue: {reason}\n"
-        "Retry once: respond with exactly one JSON object following the schema, no extra text."
     )

@@ -7,167 +7,176 @@ import json
 
 import chess
 import chess.pgn
-from prompts import SYSTEM_PROMPT, build_user_prompt, build_retry_prompt
-
-PGN_DIR = "games"
-if not os.path.isdir(PGN_DIR):
-    os.makedirs(PGN_DIR, exist_ok=True)
+from prompts import SYSTEM_PROMPT, build_user_prompt, RetryReason
 
 
-def play_game(white, black, round_no=1, max_moves=200):
-    """Play a single game and return result.
+class ChessGame:
+    """Single chess game between two players."""
 
-    Result can be either:
-    - "1-0": White wins
-    - "0-1": Black wins
-    - "1/2-1/2": Draw
-    """
+    def __init__(self, white_player, black_player, max_moves=200, pgn_dir="games"):
+        """Initialize a new chess game."""
+        self.white_player = white_player
+        self.black_player = black_player
+        self.max_moves = max_moves
+        self.pgn_dir = pgn_dir
 
-    board = chess.Board()  # game state (pieces, turn, legal moves, result, etc.)
-    game = chess.pgn.Game()  # PGN representation
-    node = game
+        # Initialize game state
+        self.board = chess.Board()
+        self.game = chess.pgn.Game()
+        self.node = self.game
 
-    # PGN headers add useful metadata to the saved game
-    game.headers["Event"] = "LLM Chess Arena"
-    game.headers["Site"] = "Local"
-    game.headers["Round"] = str(round_no)
-    game.headers["White"] = white.name()
-    game.headers["Black"] = black.name()
-    game.headers["Date"] = time.strftime("%Y.%m.%d")
+        # Ensure PGN directory exists
+        os.makedirs(self.pgn_dir, exist_ok=True)
 
-    while not board.is_game_over() and board.fullmove_number <= max_moves:
-        player = white if board.turn == chess.WHITE else black
+        # Set up PGN headers
+        self.game.headers["Event"] = "LLM Chess Arena"
+        self.game.headers["Site"] = "Local"
+        self.game.headers["White"] = self.white_player.name()
+        self.game.headers["Black"] = self.black_player.name()
+        self.game.headers["Date"] = time.strftime("%Y.%m.%d")
 
-        response = player.get_next_move(
-            SYSTEM_PROMPT,
-            build_user_prompt(board),
-        )
-        print(f"- {player.name()}: {response}")
-        move = extract_move_from_response(response)
+    def extract_move_from_response(self, response):
+        """Extract the move from the response.
 
-        if not move:
-            # Give a second chance
-            response = player.get_next_move(
-                SYSTEM_PROMPT,
-                build_retry_prompt(board, "empty or missing response"),
-            )
-            move = extract_move_from_response(response)
+        Returns:
+            dict: Either {"move": chess.Move or "resign"} for success
+                or {"error": RetryReason} for failure
+        """
+        if not response:
+            return {"error": RetryReason.EMPTY_RESPONSE}
+        # TODO: empty response could not be counted in the retry logic
 
-        # If still nothing, resign
-        if not move:
-            if board.turn == chess.WHITE:
-                game.headers["Result"] = "0-1"
-                game.headers["Termination"] = "No valid move"
-            else:
-                game.headers["Result"] = "1-0"
-                game.headers["Termination"] = "No valid move"
-            break
+        try:
+            parsed_response = json.loads(response.strip())
+        except json.JSONDecodeError:
+            print(f"Error parsing JSON: {response}")
+            return {"error": RetryReason.INVALID_JSON}
 
-        # Allow explicit resignation
-        if move == "resign":
-            if board.turn == chess.WHITE:
-                game.headers["Result"] = "0-1"
-                game.headers["Termination"] = "White resigned"
-            else:
-                game.headers["Result"] = "1-0"
-                game.headers["Termination"] = "Black resigned"
-            break
+        if "move" not in parsed_response:
+            print(f"Missing 'move' key in response: {parsed_response}")
+            return {"error": RetryReason.MISSING_MOVE_KEY}
 
-        # If the move is not legal, ask the model to retry
-        if move not in board.legal_moves:
-            response = player.get_next_move(
-                SYSTEM_PROMPT,
-                build_retry_prompt(
-                    board,
-                    "invalid format or illegal move; provide exactly one legal UCI move",
-                ),
-            )
-            move = extract_move_from_response(response)
+        try:
+            move_str = parsed_response["move"].strip()
+            if move_str == "resign":
+                return {"move": move_str}
+            return {"move": chess.Move.from_uci(move_str)}
+        except ValueError:
+            print(f"Error parsing UCI move: {move_str}")
+            return {"error": RetryReason.INVALID_UCI_FORMAT}
 
-            # If still nothing, resign
-            if not move:
-                if board.turn == chess.WHITE:
-                    game.headers["Result"] = "0-1"
-                    game.headers["Termination"] = "White resigned (no move)"
-                else:
-                    game.headers["Result"] = "1-0"
-                    game.headers["Termination"] = "Black resigned (no move)"
-                break
+    def terminate_game(self, result, termination_reason):
+        """Set game result and termination reason."""
+        self.game.headers["Result"] = result
+        self.game.headers["Termination"] = termination_reason
 
-            if move == "resign":
-                if board.turn == chess.WHITE:
-                    game.headers["Result"] = "0-1"
-                    game.headers["Termination"] = "White resigned"
-                else:
-                    game.headers["Result"] = "1-0"
-                    game.headers["Termination"] = "Black resigned"
-                break
-
-        # If after retry we still don't have a legal move, resign
-        if move not in board.legal_moves:
-            if board.turn == chess.WHITE:
-                game.headers["Result"] = "0-1"
-                game.headers["Termination"] = "Illegal move"
-            else:
-                game.headers["Result"] = "1-0"
-                game.headers["Termination"] = "Illegal move"
-            break
-
-        board.push(move)
-        node = node.add_variation(move)
-
-    # If result not set yet, derive it from board state or move limit
-    if game.headers.get("Result", "*") == "*":
-        if board.is_game_over():
-            result = board.result(claim_draw=True)
-            game.headers["Result"] = result
-            if board.is_checkmate():
-                game.headers["Termination"] = "checkmate"
-            elif board.is_stalemate():
-                game.headers["Termination"] = "stalemate"
-            elif board.can_claim_fifty_moves():
-                game.headers["Termination"] = "50-move rule"
-            elif board.can_claim_threefold_repetition():
-                game.headers["Termination"] = "threefold repetition"
-            else:
-                game.headers["Termination"] = "draw"
+    def resign(self, player_color, reason):
+        """Handle player resignation."""
+        if player_color == chess.WHITE:
+            self.terminate_game("0-1", f"White resigned ({reason})")
         else:
-            game.headers["Result"] = "1/2-1/2"
-            game.headers["Termination"] = "adjudication: move limit"
+            self.terminate_game("1-0", f"Black resigned ({reason})")
 
-    print(f"Game result: {game.headers['Result']}")
-    print(f"Termination reason: {game.headers['Termination']}")
+    def get_player_move(self, player, max_retries=1):
+        """Get a move from the specified player with retry logic."""
 
-    # Save PGN
-    pgn_io = io.StringIO()
-    exporter = chess.pgn.FileExporter(pgn_io)
-    game.accept(exporter)
-    pgn_text = pgn_io.getvalue()
+        # Retry logic
+        retry_message = ""
+        for _ in range(1 + max_retries):
+            # Ask the player for its move
+            # TODO: would be better to add a message to the conversation than starting a new one
+            user_prompt = build_user_prompt(self.board) + retry_message
+            response = player.chat(SYSTEM_PROMPT, user_prompt)
+            print(f"- {player.name()}: {response}")
 
-    safe_white = white.name().replace("/", "-")
-    safe_black = black.name().replace("/", "-")
-    filename = f"{time.time_ns()}_{safe_white}_vs_{safe_black}.pgn"
-    pgn_path = os.path.join(PGN_DIR, filename)
-    with open(pgn_path, "w", encoding="utf-8") as f:
-        f.write(pgn_text)
+            # Extract the move from the response
+            result = self.extract_move_from_response(response)
+            if "move" in result:
+                move = result["move"]
+                # Check if move is legal
+                if move == "resign" or move in self.board.legal_moves:
+                    return {"move": move}
+                else:
+                    error_reason = RetryReason.ILLEGAL_MOVE
+            else:
+                error_reason = result["error"]
+            print(f"⚠️ Error on this move: {error_reason}")
+            retry_message = error_reason.value
 
-    return game.headers["Result"]
+        # All attempts failed
+        return {"error": error_reason}
 
+    def determine_game_result(self):
+        """Determine the final result if the game ended naturally."""
+        if self.board.is_game_over():
+            result = self.board.result(claim_draw=True)
+            self.game.headers["Result"] = result
+            if self.board.is_checkmate():
+                self.game.headers["Termination"] = "checkmate"
+            elif self.board.is_stalemate():
+                self.game.headers["Termination"] = "stalemate"
+            elif self.board.can_claim_fifty_moves():
+                self.game.headers["Termination"] = "50-move rule"
+            elif self.board.can_claim_threefold_repetition():
+                self.game.headers["Termination"] = "threefold repetition"
+            else:
+                self.game.headers["Termination"] = "draw"
+        else:
+            # Game ended due to move limit
+            self.game.headers["Result"] = "1/2-1/2"
+            self.game.headers["Termination"] = "exceeded moves limit"
 
-def extract_move_from_response(response):
-    """Extract the move from the response."""
-    try:
-        response = json.loads(response.strip())
-    except Exception as e:
-        print(f"Error extracting move from response: {e}")
-        print(f"Response: {response}")
-        return None
-    try:
-        move = response["move"].strip()
-        if move == "resign":
-            return move
-        return chess.Move.from_uci(move)
-    except Exception as e:
-        print(f"Error parsing UCI move: {e}")
-        print(f"Move: {move}")
-        return None
+    def save_pgn(self):
+        """Save the game to a PGN file."""
+        pgn_io = io.StringIO()
+        exporter = chess.pgn.FileExporter(pgn_io)
+        self.game.accept(exporter)
+        pgn_text = pgn_io.getvalue()
+
+        safe_white = self.white_player.name().replace("/", "-")
+        safe_black = self.black_player.name().replace("/", "-")
+        filename = f"{time.time_ns()}_{safe_white}_vs_{safe_black}.pgn"
+        pgn_path = os.path.join(self.pgn_dir, filename)
+
+        with open(pgn_path, "w", encoding="utf-8") as f:
+            f.write(pgn_text)
+
+    def play(self, max_retries=1):
+        """Play the complete game and return the result."""
+        while (
+            not self.board.is_game_over()
+            and self.board.fullmove_number <= self.max_moves
+        ):
+            # Get next player
+            player = (
+                self.white_player
+                if self.board.turn == chess.WHITE
+                else self.black_player
+            )
+
+            # Get move from player
+            result = self.get_player_move(player, max_retries)
+
+            if "error" in result:  # player failed to provide a valid move after retries
+                self.resign(self.board.turn, "No valid move provided")
+                break
+
+            move = result["move"]
+            if move == "resign":
+                self.resign(self.board.turn, "Resigned")
+                break
+
+            # Make move
+            self.board.push(move)
+            self.node = self.node.add_variation(move)
+
+        # Determine final result if not set yet
+        if "Result" not in self.game.headers:
+            self.determine_game_result()
+
+        # Print and save results
+        print(f"Game result: {self.game.headers['Result']}")
+        print(f"Termination reason: {self.game.headers['Termination']}")
+        self.save_pgn()
+
+        return self.game.headers["Result"]

@@ -30,7 +30,7 @@ class OpenRouterClient:
     def name(self):
         return self.model
 
-    def get_next_move(self, system_prompt, user_prompt):
+    def chat(self, system_prompt, user_prompt):
         try:
             completion = self.client.chat.completions.create(
                 model=self.model,
@@ -41,5 +41,5 @@ class OpenRouterClient:
             )
             return completion.choices[0].message.content
         except Exception as e:
-            print(f"Error getting next move: {e}")
+            print(f"Error getting response from {self.model}: {e}")
             return None
