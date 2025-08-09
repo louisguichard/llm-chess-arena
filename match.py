@@ -92,13 +92,16 @@ class ChessGame:
 
         for _ in range(1 + max_retries):
             # Ask the player for its move
-            response = player.chat(messages)
+            completion = player.chat(messages)
+            response = completion.choices[0].message.content
             print(f"- {player.name()}: {response}")
             if response:
                 messages.append({"role": "assistant", "content": response})
             else:
-                print("⚠️ Error on this move: RetryReason.EMPTY_RESPONSE")
-                break
+                print(f"Messages: {messages}")
+                print(f"Completion: {completion}")
+                messages.append({"role": "assistant", "content": ""})
+                error_reason = RetryReason.EMPTY_RESPONSE
 
             # Extract the move from the response
             result = self.extract_move_from_response(response)

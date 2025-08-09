@@ -57,8 +57,16 @@ class OpenRouterClient:
                         },
                     },
                 },
+                extra_body={"usage": {"include": True}},
             )
-            return completion.choices[0].message.content
+            # Print request cost
+            try:
+                cost = completion.usage.cost
+                print(f"Request cost: {cost:.3f}€")
+            except Exception as e:
+                print(f"Error getting upstream inference cost: {e}")
+
+            return completion
         except Exception as e:
             print(f"Error getting response from {self.model}: {e}")
             return None

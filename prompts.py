@@ -7,11 +7,9 @@ from enum import Enum
 class RetryReason(Enum):
     """Enumeration of retry reasons with custom messages."""
 
-    EMPTY_RESPONSE = (
-        "The response was empty. Please answer with a JSON object following the schema."
-    )
+    EMPTY_RESPONSE = "Your response was empty. Please answer with a JSON object following the schema."
     INVALID_JSON = "The JSON you provided is invalid or you wrote outside of it. Please answer with only a JSON object following the schema."
-    ILLEGAL_MOVE = "Your move is invalid. Please provide a legal UCI move."
+    ILLEGAL_MOVE = "Your move is illegal. Please provide a legal UCI move."
     MISSING_MOVE_KEY = "The JSON you provided is missing the 'move' key. Please answer with only a JSON object following the schema."
     INVALID_UCI_FORMAT = "Your move isn't in UCI format. Please provide your move in UCI format (e.g., 'e2e4' or 'e7e8q')."
 
@@ -75,7 +73,7 @@ SYSTEM_PROMPT = """You are a professional chess player. Choose your next move by
 
 Schema (all keys required):
 {
-  "rationale": string,  // ≤40 words, concise explanation only
+  "rationale": string,  // concise explanation
   "move": string        // exactly one legal move in UCI, e.g., "e2e4", "e7e8q"
 }
 
