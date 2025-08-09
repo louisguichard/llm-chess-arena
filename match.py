@@ -156,12 +156,18 @@ def play_game(white, black, round_no=1, max_moves=200):
 
 def extract_move_from_response(response):
     """Extract the move from the response."""
-    response = json.loads(response.strip())
-    # TODO: add retry in case of invalid json
-    move = response["move"].strip()
-    if move == "resign":
-        return move
     try:
+        response = json.loads(response.strip())
+    except Exception as e:
+        print(f"Error extracting move from response: {e}")
+        print(f"Response: {response}")
+        return None
+    try:
+        move = response["move"].strip()
+        if move == "resign":
+            return move
         return chess.Move.from_uci(move)
-    except ValueError:
+    except Exception as e:
+        print(f"Error parsing UCI move: {e}")
+        print(f"Move: {move}")
         return None
