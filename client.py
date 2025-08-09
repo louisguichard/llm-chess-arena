@@ -30,14 +30,11 @@ class OpenRouterClient:
     def name(self):
         return self.model
 
-    def chat(self, system_prompt, user_prompt):
+    def chat(self, messages):
         try:
             completion = self.client.chat.completions.create(
                 model=self.model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
+                messages=messages,
             )
             return completion.choices[0].message.content
         except Exception as e:

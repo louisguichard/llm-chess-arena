@@ -35,6 +35,10 @@ class ChessGame:
         self.game.headers["Black"] = self.black_player.name()
         self.game.headers["Date"] = time.strftime("%Y.%m.%d")
 
+        # Create one chat conversation per player for the whole game
+        self.white_messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+        self.black_messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+
     def extract_move_from_response(self, response):
         """Extract the move from the response.
 
@@ -80,14 +84,21 @@ class ChessGame:
     def get_player_move(self, player, max_retries=1):
         """Get a move from the specified player with retry logic."""
 
-        # Retry logic
-        retry_message = ""
+        # Add current board state to the conversation
+        messages = (
+            self.white_messages if player is self.white_player else self.black_messages
+        )
+        messages.append({"role": "user", "content": build_user_prompt(self.board)})
+
         for _ in range(1 + max_retries):
             # Ask the player for its move
-            # TODO: would be better to add a message to the conversation than starting a new one
-            user_prompt = build_user_prompt(self.board) + retry_message
-            response = player.chat(SYSTEM_PROMPT, user_prompt)
+            response = player.chat(messages)
             print(f"- {player.name()}: {response}")
+            if response:
+                messages.append({"role": "assistant", "content": response})
+            else:
+                print("⚠️ Error on this move: RetryReason.EMPTY_RESPONSE")
+                break
 
             # Extract the move from the response
             result = self.extract_move_from_response(response)
@@ -101,7 +112,8 @@ class ChessGame:
             else:
                 error_reason = result["error"]
             print(f"⚠️ Error on this move: {error_reason}")
-            retry_message = error_reason.value
+            # Add error reason to the conversation
+            messages.append({"role": "user", "content": error_reason.value})
 
         # All attempts failed
         return {"error": error_reason}
