@@ -1,6 +1,7 @@
 """LLM client."""
 
 import os
+import time
 
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -32,6 +33,7 @@ class OpenRouterClient:
 
     def chat(self, messages):
         try:
+            start = time.time()
             completion = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
@@ -59,10 +61,11 @@ class OpenRouterClient:
                 },
                 extra_body={"usage": {"include": True}},
             )
+            latency = time.time() - start
             # Print request cost
             try:
                 cost = completion.usage.cost
-                print(f"Request cost: {cost:.3f}€")
+                print(f"Request cost: {cost:.3f}€ | latency: {latency:.1f}s")
             except Exception as e:
                 print(f"Error getting upstream inference cost: {e}")
 
