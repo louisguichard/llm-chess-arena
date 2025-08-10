@@ -28,7 +28,6 @@ class OpenRouterClient:
             timeout=300,
         )
         self.model = model
-        self._app_title = "LLM Chess Arena"
 
     def name(self):
         return self.model
@@ -65,7 +64,7 @@ class OpenRouterClient:
                 },
                 extra_body={"usage": {"include": True}},
             )
-            log.info(f"Received response from {self.model}.")
+            log.debug(f"Received response from {self.model}.")
             latency = time.time() - start
             cost = 0
             # Print request cost

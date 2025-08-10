@@ -114,7 +114,7 @@ class ChessGame:
                 f"Prompt to {player.name()} (role=user):\n{messages[-1]['content']}"
             )
             response_data = player.chat(messages)
-            log.info(
+            log.debug(
                 f"Attempt {i + 1}/{1 + max_retries}: Received response for {player.name()}."
             )
             if not response_data:
@@ -241,11 +241,25 @@ class ChessGame:
 
         move = result["move"]
         if move == "resign":
+            # Count this final response toward time/cost
+            if self.board.turn == chess.WHITE:
+                self.white_time += latency
+                self.white_cost += cost
+            else:
+                self.black_time += latency
+                self.black_cost += cost
             self.resign(self.board.turn, "Resigned")
             self.is_over = True
             self.save_pgn()
             return {"status": "resigned"}
         if move == "pass":
+            # Count this final response toward time/cost
+            if self.board.turn == chess.WHITE:
+                self.white_time += latency
+                self.white_cost += cost
+            else:
+                self.black_time += latency
+                self.black_cost += cost
             # Stalemate acknowledgment without pushing a move
             self.is_over = True
             self.determine_game_result()

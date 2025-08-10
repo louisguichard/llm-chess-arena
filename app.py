@@ -13,8 +13,6 @@ from client import OpenRouterClient
 import json
 import traceback
 from logger import log
-import time
-import threading
 
 app = Flask(__name__)
 
@@ -53,61 +51,14 @@ def start_game():
 
     @stream_with_context
     def generate_moves():
-        # Track statistics during the game
-        white_time = 0.0
-        black_time = 0.0
-        white_cost = 0.0
-        black_cost = 0.0
-
         log.info("Starting game stream...")
-
         try:
-            # Send an initial large SSE comment to defeat proxy buffers (2KB prelude)
-            yield ": " + (" " * 2048) + "\n\n"
             while not game.is_over:
-                # True when it's white to move
-                is_white_turn = bool(game.board.turn)
-
-                # Run the potentially long move in a background thread and emit heartbeats
-                move_container = {"result": None, "error": None}
-
-                def run_move():
-                    try:
-                        move_container["result"] = game.play_next_move()
-                    except Exception as e:
-                        move_container["error"] = e
-
-                t = threading.Thread(target=run_move, daemon=True)
-                t.start()
-
-                # Send frequent heartbeats to keep proxies/load balancers from timing out
-                last_heartbeat = time.time()
-                while t.is_alive():
-                    # Emit a keep-alive comment every 2 seconds
-                    if time.time() - last_heartbeat >= 2:
-                        # Send a heartbeat event to keep connection alive
-                        yield "event: heartbeat\ndata: \n\n"
-                        last_heartbeat = time.time()
-                    time.sleep(0.2)
-
-                if move_container["error"] is not None:
-                    raise move_container["error"]
-
-                move_result = move_container["result"]
-                if move_result:
-                    # Accumulate statistics based on whose turn it was
-                    if is_white_turn:
-                        white_time += move_result.get("latency", 0.0)
-                        white_cost += move_result.get("cost", 0.0)
-                    else:
-                        black_time += move_result.get("latency", 0.0)
-                        black_cost += move_result.get("cost", 0.0)
-
-                    event_data = f"data: {json.dumps(move_result)}\n\n"
-                    log.debug(f"Sending event: {event_data.strip()}")
-                    yield event_data
-                else:
+                move_result = game.play_next_move()
+                if move_result is None:
                     break
+                event_data = f"data: {json.dumps(move_result)}\n\n"
+                yield event_data
         except Exception as e:
             log.error(f"An exception occurred during the game stream: {e}")
             log.error(traceback.format_exc())
@@ -115,17 +66,16 @@ def start_game():
                 "error": "An internal error occurred during the game.",
                 "details": str(e),
             }
-            event_data = f"data: {json.dumps(error_event)}\n\n"
-            yield event_data
+            yield f"data: {json.dumps(error_event)}\n\n"
         finally:
             log.info("Game stream finished.")
 
-        # Calculate moves: total moves divided by 2, white gets the extra if odd
+        # Calculate total moves for stats
         total_moves = len(game.board.move_stack)
-        white_moves = (total_moves + 1) // 2  # White moves first, so gets extra if odd
+        white_moves = (total_moves + 1) // 2
         black_moves = total_moves // 2
 
-        # Update ratings after game is over
+        # Update ratings using game-tracked stats
         result = game.game.headers.get("Result")
         if result:
             ratings = RatingsTable()
@@ -135,32 +85,21 @@ def start_game():
                 result,
                 white_moves=white_moves,
                 black_moves=black_moves,
-                white_time=white_time,
-                black_time=black_time,
-                white_cost=white_cost,
-                black_cost=black_cost,
+                white_time=game.white_time,
+                black_time=game.black_time,
+                white_cost=game.white_cost,
+                black_cost=game.black_cost,
             )
             log.info(f"Updated ratings: {white_model} vs {black_model} -> {result}")
-            log.info(
-                f"Game stats: W({white_moves}m, {white_time:.1f}s, ${white_cost:.4f}) vs B({black_moves}m, {black_time:.1f}s, ${black_cost:.4f})"
-            )
 
-        # Final update
         final_state = {
             "is_over": True,
             "result": result,
             "termination": game.game.headers.get("Termination"),
         }
-        event_data = f"data: {json.dumps(final_state)}\n\n"
-        log.debug(f"Sending final event: {event_data.strip()}")
-        yield event_data
+        yield f"data: {json.dumps(final_state)}\n\n"
 
-    headers = {
-        # Prevent buffering and transformations which can break SSE
-        "Cache-Control": "no-cache, no-transform",
-        "Connection": "keep-alive",
-        "X-Accel-Buffering": "no",  # for nginx if present
-    }
+    headers = {"Cache-Control": "no-cache"}
     return Response(
         generate_moves(),
         headers=headers,

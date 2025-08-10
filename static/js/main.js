@@ -148,9 +148,7 @@ function handleStartBattle() {
         render();
     };
 
-    eventSource.addEventListener('heartbeat', function(event) {
-        // This is just a keep-alive, no action needed on the client.
-    });
+    // No heartbeat events; server streams each move when ready.
 
     eventSource.onerror = function(err) {
         console.warn(

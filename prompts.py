@@ -56,35 +56,6 @@ def board_to_ascii(board):
     return "\n".join(rank_labels_rows + ["   " + file_labels])
 
 
-def san_history_from_board(board):
-    """Return the SAN move history for the current board position.
-
-    This reconstructs the SAN strings from the move stack without mutating the
-    original board.
-    """
-    if not board.move_stack:
-        return ""
-
-    temp = chess.Board()  # start from the initial position
-    san_moves = []
-    for move in board.move_stack:
-        san_moves.append(temp.san(move))
-        temp.push(move)
-    return " ".join(san_moves)
-
-
-def last_san_from_board(board):
-    """Return the last SAN move or '-' if no moves were played yet."""
-    if not board.move_stack:
-        return "-"
-    temp = chess.Board()
-    last_san = "-"
-    for move in board.move_stack:
-        last_san = temp.san(move)
-        temp.push(move)
-    return last_san
-
-
 def last_uci_from_board(board):
     """Return the last UCI move or '-' if no moves were played yet."""
     if not board.move_stack:
