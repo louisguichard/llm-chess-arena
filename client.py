@@ -36,6 +36,7 @@ class OpenRouterClient:
     def chat(self, messages):
         try:
             start = time.time()
+            log.info(f"Sending request to {self.model}...")
             completion = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
@@ -63,6 +64,7 @@ class OpenRouterClient:
                 },
                 extra_body={"usage": {"include": True}},
             )
+            log.info(f"Received response from {self.model}.")
             latency = time.time() - start
             cost = 0
             # Print request cost

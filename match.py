@@ -96,9 +96,15 @@ class ChessGame:
         )
         messages.append({"role": "user", "content": build_user_prompt(self.board)})
 
-        for _ in range(1 + max_retries):
+        for i in range(1 + max_retries):
             # Ask the player for its move
+            log.info(
+                f"Attempt {i + 1}/{1 + max_retries}: Getting move from {player.name()}..."
+            )
             response_data = player.chat(messages)
+            log.info(
+                f"Attempt {i + 1}/{1 + max_retries}: Received response for {player.name()}."
+            )
             if not response_data:
                 # Handle case where chat returns None
                 error_reason = RetryReason.EMPTY_RESPONSE
