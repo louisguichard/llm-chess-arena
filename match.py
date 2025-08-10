@@ -110,7 +110,7 @@ class ChessGame:
             log.info(
                 f"Attempt {i + 1}/{1 + max_retries}: Getting move from {player.name()}..."
             )
-            log.info(
+            log.debug(
                 f"Prompt to {player.name()} (role=user):\n{messages[-1]['content']}"
             )
             response_data = player.chat(messages)

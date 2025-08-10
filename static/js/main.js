@@ -148,6 +148,10 @@ function handleStartBattle() {
         render();
     };
 
+    eventSource.addEventListener('heartbeat', function(event) {
+        // This is just a keep-alive, no action needed on the client.
+    });
+
     eventSource.onerror = function(err) {
         console.warn(
             "EventSource connection error. The browser will attempt to reconnect.",

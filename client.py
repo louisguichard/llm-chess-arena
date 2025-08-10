@@ -36,7 +36,7 @@ class OpenRouterClient:
     def chat(self, messages):
         try:
             start = time.time()
-            log.info(f"Sending request to {self.model}...")
+            log.debug(f"Sending request to {self.model}...")
             completion = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,

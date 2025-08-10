@@ -85,8 +85,8 @@ def start_game():
                 while t.is_alive():
                     # Emit a keep-alive comment every 2 seconds
                     if time.time() - last_heartbeat >= 2:
-                        # Minimal SSE comment line keeps the connection alive across intermediaries
-                        yield ":\n\n"
+                        # Send a heartbeat event to keep connection alive
+                        yield "event: heartbeat\ndata: \n\n"
                         last_heartbeat = time.time()
                     time.sleep(0.2)
 
@@ -104,7 +104,7 @@ def start_game():
                         black_cost += move_result.get("cost", 0.0)
 
                     event_data = f"data: {json.dumps(move_result)}\n\n"
-                    log.info(f"Sending event: {event_data.strip()}")
+                    log.debug(f"Sending event: {event_data.strip()}")
                     yield event_data
                 else:
                     break
@@ -152,7 +152,7 @@ def start_game():
             "termination": game.game.headers.get("Termination"),
         }
         event_data = f"data: {json.dumps(final_state)}\n\n"
-        log.info(f"Sending final event: {event_data.strip()}")
+        log.debug(f"Sending final event: {event_data.strip()}")
         yield event_data
 
     headers = {
