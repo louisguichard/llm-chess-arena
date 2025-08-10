@@ -62,8 +62,8 @@ def start_game():
         log.info("Starting game stream...")
 
         try:
-            # Send an initial heartbeat so intermediaries keep the connection open
-            yield ": stream-start\n\n"
+            # Send an initial large SSE comment to defeat proxy buffers (2KB prelude)
+            yield ": " + (" " * 2048) + "\n\n"
             while not game.is_over:
                 # True when it's white to move
                 is_white_turn = bool(game.board.turn)
@@ -80,11 +80,13 @@ def start_game():
                 t = threading.Thread(target=run_move, daemon=True)
                 t.start()
 
+                # Send frequent heartbeats to keep proxies/load balancers from timing out
                 last_heartbeat = time.time()
                 while t.is_alive():
-                    # Emit a keep-alive comment every 10 seconds
-                    if time.time() - last_heartbeat >= 10:
-                        yield ": keep-alive\n\n"
+                    # Emit a keep-alive comment every 2 seconds
+                    if time.time() - last_heartbeat >= 2:
+                        # Minimal SSE comment line keeps the connection alive across intermediaries
+                        yield ":\n\n"
                         last_heartbeat = time.time()
                     time.sleep(0.2)
 
@@ -154,11 +156,16 @@ def start_game():
         yield event_data
 
     headers = {
-        "Cache-Control": "no-cache",
+        # Prevent buffering and transformations which can break SSE
+        "Cache-Control": "no-cache, no-transform",
         "Connection": "keep-alive",
         "X-Accel-Buffering": "no",  # for nginx if present
     }
-    return Response(generate_moves(), mimetype="text/event-stream", headers=headers)
+    return Response(
+        generate_moves(),
+        headers=headers,
+        content_type="text/event-stream; charset=utf-8",
+    )
 
 
 if __name__ == "__main__":
