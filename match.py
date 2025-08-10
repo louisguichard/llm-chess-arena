@@ -1,13 +1,13 @@
 """Play a chess game."""
 
 import io
-import os
 import time
 import json
 
 import chess
 import chess.pgn
 from prompts import SYSTEM_PROMPT, build_user_prompt, RetryReason
+from gcp import write_file_to_gcs
 
 
 class ChessGame:
@@ -24,9 +24,6 @@ class ChessGame:
         self.board = chess.Board()
         self.game = chess.pgn.Game()
         self.node = self.game
-
-        # Ensure PGN directory exists
-        os.makedirs(self.pgn_dir, exist_ok=True)
 
         # Set up PGN headers
         self.game.headers["Event"] = "LLM Chess Arena"
@@ -174,10 +171,8 @@ class ChessGame:
         safe_white = self.white_player.name().replace("/", "-")
         safe_black = self.black_player.name().replace("/", "-")
         filename = f"{time.time_ns()}_{safe_white}_vs_{safe_black}.pgn"
-        pgn_path = os.path.join(self.pgn_dir, filename)
-
-        with open(pgn_path, "w", encoding="utf-8") as f:
-            f.write(pgn_text)
+        blob_name = f"{self.pgn_dir}/{filename}"
+        write_file_to_gcs(blob_name, pgn_text, content_type="application/x-chess-pgn")
 
     def get_current_player(self):
         """Return the player whose turn it is."""

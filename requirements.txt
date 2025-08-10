@@ -2,3 +2,5 @@ python-chess
 openai
 python-dotenv
 Flask
+gunicorn
+google-cloud-storage

@@ -1,7 +1,6 @@
 """Update Elo ratings."""
 
-import json
-import os
+from gcp import read_json_from_gcs, write_json_to_gcs
 
 # K-factor controls how fast ratings move.
 K_FACTOR_DEFAULT = 32
@@ -41,11 +40,7 @@ class RatingsTable:
         self.load_ratings()
 
     def load_ratings(self):
-        if os.path.exists(RATINGS_FILE):
-            with open(RATINGS_FILE, "r", encoding="utf-8") as f:
-                self.ratings = json.load(f)
-        else:
-            self.ratings = {}
+        self.ratings = read_json_from_gcs(RATINGS_FILE)
 
     def get(self, player_id):
         player_data = self.ratings.get(player_id)
@@ -163,5 +158,4 @@ class RatingsTable:
         self.save()
 
     def save(self):
-        with open(RATINGS_FILE, "w", encoding="utf-8") as f:
-            json.dump(self.ratings, f, indent=2, ensure_ascii=False)
+        write_json_to_gcs(RATINGS_FILE, self.ratings)
