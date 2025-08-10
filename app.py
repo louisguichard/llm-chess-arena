@@ -13,6 +13,8 @@ from client import OpenRouterClient
 import json
 import traceback
 from logger import log
+import time
+import threading
 
 app = Flask(__name__)
 
@@ -60,11 +62,36 @@ def start_game():
         log.info("Starting game stream...")
 
         try:
+            # Send an initial heartbeat so intermediaries keep the connection open
+            yield ": stream-start\n\n"
             while not game.is_over:
                 # True when it's white to move
                 is_white_turn = bool(game.board.turn)
 
-                move_result = game.play_next_move()
+                # Run the potentially long move in a background thread and emit heartbeats
+                move_container = {"result": None, "error": None}
+
+                def run_move():
+                    try:
+                        move_container["result"] = game.play_next_move()
+                    except Exception as e:
+                        move_container["error"] = e
+
+                t = threading.Thread(target=run_move, daemon=True)
+                t.start()
+
+                last_heartbeat = time.time()
+                while t.is_alive():
+                    # Emit a keep-alive comment every 10 seconds
+                    if time.time() - last_heartbeat >= 10:
+                        yield ": keep-alive\n\n"
+                        last_heartbeat = time.time()
+                    time.sleep(0.2)
+
+                if move_container["error"] is not None:
+                    raise move_container["error"]
+
+                move_result = move_container["result"]
                 if move_result:
                     # Accumulate statistics based on whose turn it was
                     if is_white_turn:

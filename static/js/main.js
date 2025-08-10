@@ -30,6 +30,7 @@ const state = {
   player2Stats: { time: 0, cost: 0 },
   turn: 'white',
   winner: null,
+  eventSource: null,
 };
 
 // --- RENDER FUNCTIONS ---
@@ -82,6 +83,12 @@ function handleStartBattle() {
         return;
     }
 
+    // Close any previous SSE connection before starting a new one
+    if (state.eventSource) {
+        try { state.eventSource.close(); } catch (_) {}
+        state.eventSource = null;
+    }
+
     state.gameStatus = 'playing';
     state.moves = [];
     state.board = initialBoard;
@@ -96,6 +103,7 @@ function handleStartBattle() {
         black_player: state.llm2.id,
     });
     const eventSource = new EventSource(`/api/start_game?${params.toString()}`);
+    state.eventSource = eventSource;
 
     eventSource.onmessage = function(event) {
         const gameData = JSON.parse(event.data);
@@ -141,8 +149,14 @@ function handleStartBattle() {
     };
 
     eventSource.onerror = function(err) {
-        // Do not close or finish on transient network/SSE hiccups; EventSource will retry.
-        console.warn("EventSource connection issue; will auto-reconnect:", err);
+        console.warn("EventSource connection issue; closing stream:", err);
+        try { eventSource.close(); } catch (_) {}
+        // Mark as finished (we will not auto-retry on the client to avoid duplicate games)
+        if (state.gameStatus === 'playing') {
+            state.gameStatus = 'finished';
+            state.winner = 'Aborted due to connection error';
+            render();
+        }
     };
 }
 
