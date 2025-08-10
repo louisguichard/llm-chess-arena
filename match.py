@@ -38,12 +38,13 @@ class ChessGame:
         # Create one chat conversation per player for the whole game
         self.white_messages = [{"role": "system", "content": SYSTEM_PROMPT}]
         self.black_messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+        self.is_over = False
 
     def extract_move_from_response(self, response):
         """Extract the move from the response.
 
         Returns:
-            dict: Either {"move": chess.Move or "resign"} for success
+            dict: Either {"move": chess.Move or "resign", "rationale": string} for success
                 or {"error": RetryReason} for failure
         """
         if not response:
@@ -62,9 +63,10 @@ class ChessGame:
 
         try:
             move_str = parsed_response["move"].strip()
+            rationale = parsed_response.get("rationale", "No rationale provided.")
             if move_str == "resign":
-                return {"move": move_str}
-            return {"move": chess.Move.from_uci(move_str)}
+                return {"move": move_str, "rationale": rationale}
+            return {"move": chess.Move.from_uci(move_str), "rationale": rationale}
         except ValueError:
             print(f"Error parsing UCI move: {move_str}")
             return {"error": RetryReason.INVALID_UCI_FORMAT}
@@ -92,7 +94,17 @@ class ChessGame:
 
         for _ in range(1 + max_retries):
             # Ask the player for its move
-            completion = player.chat(messages)
+            response_data = player.chat(messages)
+            if not response_data:
+                # Handle case where chat returns None
+                error_reason = RetryReason.EMPTY_RESPONSE
+                messages.append({"role": "user", "content": error_reason.value})
+                continue
+
+            completion = response_data["completion"]
+            cost = response_data.get("cost", 0)
+            latency = response_data.get("latency", 0)
+
             response = completion.choices[0].message.content
             print(f"- {player.name()}: {response}")
             if response:
@@ -109,7 +121,12 @@ class ChessGame:
                 move = result["move"]
                 # Check if move is legal
                 if move == "resign" or move in self.board.legal_moves:
-                    return {"move": move}
+                    return {
+                        "move": move,
+                        "rationale": result.get("rationale"),
+                        "cost": cost,
+                        "latency": latency,
+                    }
                 else:
                     error_reason = RetryReason.ILLEGAL_MOVE
             else:
@@ -156,42 +173,81 @@ class ChessGame:
         with open(pgn_path, "w", encoding="utf-8") as f:
             f.write(pgn_text)
 
+    def get_current_player(self):
+        """Return the player whose turn it is."""
+        return (
+            self.white_player if self.board.turn == chess.WHITE else self.black_player
+        )
+
+    def play_next_move(self, max_retries=1):
+        """Play one move and return the result.
+
+        Returns a dictionary with move info, or None if game is over.
+        """
+        if (
+            self.is_over
+            or self.board.is_game_over()
+            or self.board.fullmove_number > self.max_moves
+        ):
+            self.is_over = True
+            if "Result" not in self.game.headers:
+                self.determine_game_result()
+            self.save_pgn()
+            return None
+
+        player = self.get_current_player()
+        result = self.get_player_move(player, max_retries)
+
+        if "error" in result:
+            self.resign(
+                self.board.turn, f"No valid move provided ({result['error'].value})"
+            )
+            self.is_over = True
+            self.save_pgn()
+            return {"status": "error", "message": "Player failed to move."}
+
+        move = result["move"]
+        if move == "resign":
+            self.resign(self.board.turn, "Resigned")
+            self.is_over = True
+            self.save_pgn()
+            return {"status": "resigned"}
+
+        # Store move info before making it
+        san_move = self.board.san(move)
+        rationale = result.get("rationale", "No rationale provided.")  # Get rationale
+        cost = result.get("cost", 0)
+        latency = result.get("latency", 0)
+
+        self.board.push(move)
+        self.node = self.node.add_variation(move)
+
+        # Check for game over condition after the move
+        if self.board.is_game_over(claim_draw=True):
+            self.is_over = True
+            self.determine_game_result()
+            self.save_pgn()
+
+        return {
+            "status": "success",
+            "move_san": san_move,
+            "fen": self.board.fen(),
+            "is_over": self.is_over,
+            "result": self.game.headers.get("Result"),
+            "rationale": rationale,
+            "cost": cost,
+            "latency": latency,
+        }
+
     def play(self, max_retries=1):
         """Play the complete game and return the result."""
-        while (
-            not self.board.is_game_over()
-            and self.board.fullmove_number <= self.max_moves
-        ):
-            # Get next player
-            player = (
-                self.white_player
-                if self.board.turn == chess.WHITE
-                else self.black_player
-            )
-
-            # Get move from player
-            result = self.get_player_move(player, max_retries)
-
-            if "error" in result:  # player failed to provide a valid move after retries
-                self.resign(self.board.turn, "No valid move provided")
+        while not self.is_over:
+            move_result = self.play_next_move(max_retries)
+            if move_result is None:  # Game ended
                 break
-
-            move = result["move"]
-            if move == "resign":
-                self.resign(self.board.turn, "Resigned")
-                break
-
-            # Make move
-            self.board.push(move)
-            self.node = self.node.add_variation(move)
-
-        # Determine final result if not set yet
-        if "Result" not in self.game.headers:
-            self.determine_game_result()
 
         # Print and save results
         print(f"Game result: {self.game.headers['Result']}")
         print(f"Termination reason: {self.game.headers['Termination']}")
-        self.save_pgn()
 
         return self.game.headers["Result"]

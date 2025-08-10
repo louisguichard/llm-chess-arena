@@ -62,6 +62,7 @@ class OpenRouterClient:
                 extra_body={"usage": {"include": True}},
             )
             latency = time.time() - start
+            cost = 0
             # Print request cost
             try:
                 cost = completion.usage.cost
@@ -69,7 +70,7 @@ class OpenRouterClient:
             except Exception as e:
                 print(f"Error getting upstream inference cost: {e}")
 
-            return completion
+            return {"completion": completion, "cost": cost, "latency": latency}
         except Exception as e:
             print(f"Error getting response from {self.model}: {e}")
             return None
