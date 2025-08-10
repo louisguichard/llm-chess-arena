@@ -1,10 +1,16 @@
-from flask import Flask, render_template, jsonify, request, Response
+from flask import (
+    Flask,
+    render_template,
+    jsonify,
+    request,
+    Response,
+    stream_with_context,
+)
 from utils import read_models_from_file
 from ratings import RatingsTable
 from match import ChessGame
 from client import OpenRouterClient
 import json
-import chess
 import traceback
 from logger import log
 
@@ -43,6 +49,7 @@ def start_game():
         black_player=OpenRouterClient(black_model),
     )
 
+    @stream_with_context
     def generate_moves():
         # Track statistics during the game
         white_time = 0.0
@@ -50,11 +57,12 @@ def start_game():
         white_cost = 0.0
         black_cost = 0.0
 
+        log.info("Starting game stream...")
+
         try:
-            log.info("Starting game stream...")
             while not game.is_over:
-                # Check whose turn it is before the move
-                is_white_turn = game.board.turn == chess.WHITE
+                # True when it's white to move
+                is_white_turn = bool(game.board.turn)
 
                 move_result = game.play_next_move()
                 if move_result:
@@ -118,7 +126,12 @@ def start_game():
         log.info(f"Sending final event: {event_data.strip()}")
         yield event_data
 
-    return Response(generate_moves(), mimetype="text/event-stream")
+    headers = {
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "X-Accel-Buffering": "no",  # for nginx if present
+    }
+    return Response(generate_moves(), mimetype="text/event-stream", headers=headers)
 
 
 if __name__ == "__main__":

@@ -100,6 +100,17 @@ function handleStartBattle() {
     eventSource.onmessage = function(event) {
         const gameData = JSON.parse(event.data);
 
+        // Handle server-sent error payloads gracefully
+        if (gameData.error) {
+            console.error("Game error:", gameData);
+            eventSource.close();
+            state.gameStatus = 'finished';
+            // Ratings may have been updated server-side already
+            fetchLeaderboard();
+            render();
+            return;
+        }
+
         if (gameData.is_over) {
             state.gameStatus = 'finished';
             state.winner = getWinnerText(gameData.result, gameData.termination);
@@ -130,11 +141,8 @@ function handleStartBattle() {
     };
 
     eventSource.onerror = function(err) {
-        console.error("EventSource failed:", err);
-        eventSource.close();
-        state.gameStatus = 'finished';
-        alert("An error occurred during the game.");
-        render();
+        // Do not close or finish on transient network/SSE hiccups; EventSource will retry.
+        console.warn("EventSource connection issue; will auto-reconnect:", err);
     };
 }
 
