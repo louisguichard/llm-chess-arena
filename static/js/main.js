@@ -164,16 +164,16 @@ function LeaderboardPage() {
         <div class="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-700 shadow-sm overflow-hidden">
             <div class="grid grid-cols-12 gap-4 px-6 py-4 border-b border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800/50">
                 <div class="col-span-1 font-semibold text-sm text-gray-600 dark:text-gray-300 text-center">#</div>
-                <div class="col-span-5 font-semibold text-sm text-gray-600 dark:text-gray-300">Player</div>
+                <div class="col-span-4 font-semibold text-sm text-gray-600 dark:text-gray-300">Player</div>
                 <div class="col-span-2 font-semibold text-sm text-gray-600 dark:text-gray-300 text-right">ELO</div>
-                <div class="col-span-2 font-semibold text-sm text-gray-600 dark:text-gray-300 text-right">Matches</div>
-                <div class="col-span-2 font-semibold text-sm text-gray-600 dark:text-gray-300 text-right">Win %</div>
+                <div class="col-span-1 font-semibold text-sm text-gray-600 dark:text-gray-300 text-right">Matches</div>
+                <div class="col-span-4 font-semibold text-sm text-gray-600 dark:text-gray-300 text-center">W / D / L (%)</div>
             </div>
             <ul>
                 ${state.leaderboardData.map((llm, index) => `
                     <li class="grid grid-cols-12 gap-4 px-6 py-4 items-center border-b border-gray-200 dark:border-zinc-800 last:border-b-0 hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors">
                         <div class="col-span-1 text-center font-medium text-gray-500 dark:text-gray-400">${index + 1}</div>
-                        <div class="col-span-5 flex items-center">
+                        <div class="col-span-4 flex items-center">
                             <div class="w-10 h-10 mr-4 flex-shrink-0">${llm.avatar}</div>
                             <div>
                                 <p class="font-semibold text-gray-900 dark:text-gray-100">${llm.name}</p>
@@ -181,8 +181,15 @@ function LeaderboardPage() {
                             </div>
                         </div>
                         <div class="col-span-2 text-right font-mono text-gray-800 dark:text-gray-200">${llm.elo}</div>
-                        <div class="col-span-2 text-right font-mono text-gray-500 dark:text-gray-400">${llm.matchesPlayed}</div>
-                        <div class="col-span-2 text-right font-mono text-gray-500 dark:text-gray-400">${llm.winRate}%</div>
+                        <div class="col-span-1 text-right font-mono text-gray-500 dark:text-gray-400">${llm.matchesPlayed}</div>
+                        <div class="col-span-4 text-center font-mono text-sm">
+                            ${llm.matchesPlayed > 0 ? `
+                                <span class="text-green-600 dark:text-green-400">${llm.wins}</span> / 
+                                <span class="text-yellow-600 dark:text-yellow-400">${llm.draws}</span> / 
+                                <span class="text-red-600 dark:text-red-400">${llm.losses}</span>
+                                <span class="text-gray-500 dark:text-gray-400 ml-1">(${llm.winRate}%)</span>
+                            ` : `<span class="text-gray-400 dark:text-gray-500">No games yet</span>`}
+                        </div>
                     </li>
                 `).join('')}
             </ul>
@@ -416,20 +423,29 @@ async function fetchLeaderboard() {
     const ratingsResponse = await fetch('/api/ratings');
     const ratings = await ratingsResponse.json();
     
-    // This is a simplified leaderboard. We can enhance it later.
     state.leaderboardData = Object.entries(ratings)
-        .map(([id, elo]) => {
+        .map(([id, data]) => {
             const llm = state.llms.find(l => l.id === id) || { 
                 id, 
                 name: id.split('/')[1] || id, 
                 provider: id.split('/')[0] || 'Unknown',
                 avatar: `<div class="w-full h-full bg-gray-600 rounded-full flex items-center justify-center text-white font-bold text-lg">${(id.split('/')[0] || 'U').charAt(0).toUpperCase()}</div>`
             };
+            
+            const wins = data.wins;
+            const draws = data.draws;
+            const losses = data.losses;
+            const total = wins + draws + losses;
+            const winRate = total > 0 ? Math.round((wins / total) * 100) : 0;
+            
             return {
                 ...llm,
-                elo: Math.round(elo),
-                matchesPlayed: 0, // This data is not available yet
-                winRate: 0,       // This data is not available yet
+                elo: Math.round(data.rating),
+                matchesPlayed: total,
+                winRate: winRate,
+                wins: wins,
+                draws: draws,
+                losses: losses
             };
         })
         .sort((a, b) => b.elo - a.elo);

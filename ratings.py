@@ -43,16 +43,39 @@ class RatingsTable:
     def load_ratings(self):
         if os.path.exists(RATINGS_FILE):
             with open(RATINGS_FILE, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            self.ratings = {str(k): float(v) for k, v in data.items()}
+                self.ratings = json.load(f)
         else:
             self.ratings = {}
 
     def get(self, player_id):
-        return self.ratings.get(player_id, self.default_rating)
+        player_data = self.ratings.get(player_id)
+        if player_data is None:
+            return self.default_rating
+        return player_data.get("rating", self.default_rating)
 
     def set(self, player_id, rating):
-        self.ratings[player_id] = rating
+        if player_id not in self.ratings:
+            self.ratings[player_id] = {
+                "rating": rating,
+                "wins": 0,
+                "draws": 0,
+                "losses": 0,
+            }
+        else:
+            self.ratings[player_id]["rating"] = rating
+
+    def get_stats(self, player_id):
+        """Get player statistics."""
+        player_data = self.ratings.get(player_id)
+        if player_data is None:
+            return {"wins": 0, "draws": 0, "losses": 0, "total": 0}
+
+        wins = player_data.get("wins", 0)
+        draws = player_data.get("draws", 0)
+        losses = player_data.get("losses", 0)
+        total = wins + draws + losses
+
+        return {"wins": wins, "draws": draws, "losses": losses, "total": total}
 
     def apply_result(self, white_id, black_id, result):
         """Update ratings based on a PGN-like result string.
@@ -61,15 +84,30 @@ class RatingsTable:
         - "0-1" means Black won
         - "1/2-1/2" means draw
         """
+        # Ensure players exist in ratings
+        if white_id not in self.ratings:
+            self.set(white_id, self.default_rating)
+        if black_id not in self.ratings:
+            self.set(black_id, self.default_rating)
+
         white_rating = self.get(white_id)
         black_rating = self.get(black_id)
 
         if result == "1-0":
             score_white = 1
+            # White wins, black loses
+            self.ratings[white_id]["wins"] += 1
+            self.ratings[black_id]["losses"] += 1
         elif result == "0-1":
             score_white = 0
+            # Black wins, white loses
+            self.ratings[black_id]["wins"] += 1
+            self.ratings[white_id]["losses"] += 1
         else:
             score_white = 0.5
+            # Draw for both
+            self.ratings[white_id]["draws"] += 1
+            self.ratings[black_id]["draws"] += 1
 
         # Update ratings
         new_white, new_black = update_elo(white_rating, black_rating, score_white)

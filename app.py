@@ -50,10 +50,17 @@ def start_game():
             else:
                 break
 
+        # Update ratings after game is over
+        result = game.game.headers.get("Result")
+        if result:
+            ratings = RatingsTable()
+            ratings.apply_result(white_model, black_model, result)
+            print(f"Updated ratings: {white_model} vs {black_model} -> {result}")
+
         # Final update
         final_state = {
             "is_over": True,
-            "result": game.game.headers.get("Result"),
+            "result": result,
             "termination": game.game.headers.get("Termination"),
         }
         event_data = f"data: {json.dumps(final_state)}\n\n"
