@@ -40,6 +40,12 @@ class ChessGame:
         self.black_messages = [{"role": "system", "content": SYSTEM_PROMPT}]
         self.is_over = False
 
+        # Track game statistics
+        self.white_time = 0.0
+        self.black_time = 0.0
+        self.white_cost = 0.0
+        self.black_cost = 0.0
+
     def extract_move_from_response(self, response):
         """Extract the move from the response.
 
@@ -219,6 +225,14 @@ class ChessGame:
         cost = result.get("cost", 0)
         latency = result.get("latency", 0)
 
+        # Track statistics based on whose turn it is
+        if self.board.turn == chess.WHITE:
+            self.white_time += latency
+            self.white_cost += cost
+        else:
+            self.black_time += latency
+            self.black_cost += cost
+
         self.board.push(move)
         self.node = self.node.add_variation(move)
 
@@ -240,14 +254,30 @@ class ChessGame:
         }
 
     def play(self, max_retries=1):
-        """Play the complete game and return the result."""
+        """Play the complete game and return the result and statistics."""
         while not self.is_over:
             move_result = self.play_next_move(max_retries)
             if move_result is None:  # Game ended
                 break
 
+        # Calculate moves: total moves divided by 2, white gets the extra if odd
+        total_moves = len(self.board.move_stack)
+        white_moves = (total_moves + 1) // 2  # White moves first, so gets extra if odd
+        black_moves = total_moves // 2
+
         # Print and save results
         print(f"Game result: {self.game.headers['Result']}")
         print(f"Termination reason: {self.game.headers['Termination']}")
+        print(
+            f"Game stats: W({white_moves}m, {self.white_time:.1f}s, ${self.white_cost:.4f}) vs B({black_moves}m, {self.black_time:.1f}s, ${self.black_cost:.4f})"
+        )
 
-        return self.game.headers["Result"]
+        return {
+            "result": self.game.headers["Result"],
+            "white_moves": white_moves,
+            "black_moves": black_moves,
+            "white_time": self.white_time,
+            "black_time": self.black_time,
+            "white_cost": self.white_cost,
+            "black_cost": self.black_cost,
+        }

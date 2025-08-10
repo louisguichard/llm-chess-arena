@@ -33,11 +33,22 @@ def run_tournament(models, total_matches):
 
         # Play game
         game = ChessGame(white, black)
-        result = game.play(max_retries=1)
+        game_data = game.play(max_retries=1)
+        result = game_data["result"]
         print(f"Game n°{i + 1} result: {result}")
 
-        # Update ratings
-        ratings.apply_result(white_model, black_model, result)
+        # Update ratings with statistics
+        ratings.apply_result(
+            white_model,
+            black_model,
+            result,
+            white_moves=game_data["white_moves"],
+            black_moves=game_data["black_moves"],
+            white_time=game_data["white_time"],
+            black_time=game_data["black_time"],
+            white_cost=game_data["white_cost"],
+            black_cost=game_data["black_cost"],
+        )
 
     # Print final ratings
     print("\nFinal ELO ratings:")

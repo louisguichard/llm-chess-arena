@@ -60,6 +60,9 @@ class RatingsTable:
                 "wins": 0,
                 "draws": 0,
                 "losses": 0,
+                "moves": 0,
+                "time": 0.0,
+                "cost": 0.0,
             }
         else:
             self.ratings[player_id]["rating"] = rating
@@ -68,21 +71,56 @@ class RatingsTable:
         """Get player statistics."""
         player_data = self.ratings.get(player_id)
         if player_data is None:
-            return {"wins": 0, "draws": 0, "losses": 0, "total": 0}
+            return {
+                "wins": 0,
+                "draws": 0,
+                "losses": 0,
+                "total": 0,
+                "moves": 0,
+                "time": 0.0,
+                "cost": 0.0,
+            }
 
         wins = player_data.get("wins", 0)
         draws = player_data.get("draws", 0)
         losses = player_data.get("losses", 0)
-        total = wins + draws + losses
+        total_games = wins + draws + losses
+        moves = player_data.get("moves", 0)
+        time = player_data.get("time", 0.0)
+        cost = player_data.get("cost", 0.0)
 
-        return {"wins": wins, "draws": draws, "losses": losses, "total": total}
+        return {
+            "wins": wins,
+            "draws": draws,
+            "losses": losses,
+            "total": total_games,
+            "moves": moves,
+            "time": time,
+            "cost": cost,
+        }
 
-    def apply_result(self, white_id, black_id, result):
+    def apply_result(
+        self,
+        white_id,
+        black_id,
+        result,
+        white_moves=0,
+        black_moves=0,
+        white_time=0.0,
+        black_time=0.0,
+        white_cost=0.0,
+        black_cost=0.0,
+    ):
         """Update ratings based on a PGN-like result string.
 
         - "1-0" means White won
         - "0-1" means Black won
         - "1/2-1/2" means draw
+
+        Parameters for tracking:
+        - white_moves, black_moves: number of moves made by each player
+        - white_time, black_time: total time spent by each player (seconds)
+        - white_cost, black_cost: total cost incurred by each player (dollars)
         """
         # Ensure players exist in ratings
         if white_id not in self.ratings:
@@ -108,6 +146,15 @@ class RatingsTable:
             # Draw for both
             self.ratings[white_id]["draws"] += 1
             self.ratings[black_id]["draws"] += 1
+
+        # Update statistics
+        self.ratings[white_id]["moves"] += white_moves
+        self.ratings[white_id]["time"] += white_time
+        self.ratings[white_id]["cost"] += white_cost
+
+        self.ratings[black_id]["moves"] += black_moves
+        self.ratings[black_id]["time"] += black_time
+        self.ratings[black_id]["cost"] += black_cost
 
         # Update ratings
         new_white, new_black = update_elo(white_rating, black_rating, score_white)
