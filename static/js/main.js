@@ -161,6 +161,7 @@ function LeaderboardPage() {
             <svg class="w-8 h-8 text-amber-500" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
             <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Leaderboard</h1>
         </div>
+        <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">More models coming soon.</p>
         <div class="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-700 shadow-sm overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full">
@@ -382,6 +383,7 @@ function LLMChessArenaPage() {
             <div class="flex items-center space-x-2">
                 <svg class="h-7 w-7 text-indigo-500" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 0 0-10 10c0 4.42 2.87 8.17 6.84 9.5.6.11.82-.26.82-.57 0-.28-.01-1.02-.01-2-2.82.61-3.42-1.34-3.42-1.34-.54-1.38-1.33-1.75-1.33-1.75-1.08-.74.08-.72.08-.72 1.2.08 1.82 1.23 1.82 1.23 1.07 1.83 2.8 1.3 3.48 1 .11-.78.42-1.3.76-1.6-2.66-.3-5.46-1.33-5.46-5.93 0-1.31.47-2.38 1.23-3.22-.12-.3-.54-1.52.12-3.18 0 0 1-.32 3.3 1.23.95-.26 1.98-.39 3-.4 1.02.01 2.05.14 3 .4 2.28-1.55 3.28-1.23 3.28-1.23.66 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.8 5.63-5.48 5.92.43.37.81 1.1.81 2.22 0 1.6-.02 2.89-.02 3.28 0 .31.22.69.83.57A10 10 0 0 0 22 12 10 10 0 0 0 12 2z"/></svg> <!-- Placeholder icon -->
                 <span class="font-bold text-xl">LLM Chess Arena</span>
+                <span class="ml-2 inline-flex items-center rounded-full bg-indigo-100 dark:bg-indigo-900/40 px-2.5 py-0.5 text-xs font-medium text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">Preview</span>
             </div>
             <nav class="hidden md:flex items-center space-x-2">
               <button data-page="battle" class="nav-link px-3 py-2 rounded-md text-sm font-medium transition-colors ${state.activePage === 'battle' ? 'text-indigo-500' : 'text-gray-500 dark:text-gray-300 hover:text-indigo-500'}">Battle</button>
