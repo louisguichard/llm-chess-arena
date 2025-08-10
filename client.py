@@ -50,11 +50,12 @@ class OpenRouterClient:
                             "properties": {
                                 "rationale": {
                                     "type": "string",
-                                    "description": "Rationale for the move",
+                                    "description": "Reasoning for your move",
                                 },
                                 "move": {
                                     "type": "string",
-                                    "description": "One legal UCI move like 'e2e4' or 'resign'",
+                                    "description": "Exactly one move in UCI like 'e2e4' (or 'resign' if checkmated, 'pass' if stalemate)",
+                                    "pattern": "^(?:[a-h][1-8][a-h][1-8][qrbn]?|resign|pass)$",
                                 },
                             },
                             "required": ["rationale", "move"],

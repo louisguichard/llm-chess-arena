@@ -6,7 +6,12 @@ import json
 
 import chess
 import chess.pgn
-from prompts import SYSTEM_PROMPT, build_user_prompt, RetryReason
+from prompts import (
+    SYSTEM_PROMPT,
+    build_user_prompt,
+    RetryReason,
+    build_retry_message,
+)
 from gcp import write_file_to_gcs
 from logger import log
 
@@ -68,12 +73,16 @@ class ChessGame:
         try:
             move_str = parsed_response["move"].strip()
             rationale = parsed_response.get("rationale", "No rationale provided.")
-            if move_str == "resign":
+            if move_str == "resign" or move_str == "pass":
                 return {"move": move_str, "rationale": rationale}
-            return {"move": chess.Move.from_uci(move_str), "rationale": rationale}
+            return {
+                "move": chess.Move.from_uci(move_str),
+                "move_uci": move_str,
+                "rationale": rationale,
+            }
         except ValueError:
             log.warning(f"Error parsing UCI move: {move_str}")
-            return {"error": RetryReason.INVALID_UCI_FORMAT}
+            return {"error": RetryReason.INVALID_UCI_FORMAT, "attempted": move_str}
 
     def terminate_game(self, result, termination_reason):
         """Set game result and termination reason."""
@@ -101,6 +110,9 @@ class ChessGame:
             log.info(
                 f"Attempt {i + 1}/{1 + max_retries}: Getting move from {player.name()}..."
             )
+            log.info(
+                f"Prompt to {player.name()} (role=user):\n{messages[-1]['content']}"
+            )
             response_data = player.chat(messages)
             log.info(
                 f"Attempt {i + 1}/{1 + max_retries}: Received response for {player.name()}."
@@ -108,7 +120,9 @@ class ChessGame:
             if not response_data:
                 # Handle case where chat returns None
                 error_reason = RetryReason.EMPTY_RESPONSE
-                messages.append({"role": "user", "content": error_reason.value})
+                messages.append(
+                    {"role": "user", "content": build_retry_message(error_reason)}
+                )
                 continue
 
             completion = response_data["completion"]
@@ -130,7 +144,11 @@ class ChessGame:
             if "move" in result:
                 move = result["move"]
                 # Check if move is legal
-                if move == "resign" or move in self.board.legal_moves:
+                if (
+                    move == "resign"
+                    or (move == "pass" and self.board.is_stalemate())
+                    or move in self.board.legal_moves
+                ):
                     return {
                         "move": move,
                         "rationale": result.get("rationale"),
@@ -139,11 +157,18 @@ class ChessGame:
                     }
                 else:
                     error_reason = RetryReason.ILLEGAL_MOVE
+                    attempted = result.get("move_uci")
             else:
                 error_reason = result["error"]
+                attempted = result.get("attempted")
             log.warning(f"⚠️ Error on this move: {error_reason}")
             # Add error reason to the conversation
-            messages.append({"role": "user", "content": error_reason.value})
+            messages.append(
+                {
+                    "role": "user",
+                    "content": build_retry_message(error_reason, attempted),
+                }
+            )
 
         # All attempts failed
         return {"error": error_reason}
@@ -220,6 +245,21 @@ class ChessGame:
             self.is_over = True
             self.save_pgn()
             return {"status": "resigned"}
+        if move == "pass":
+            # Stalemate acknowledgment without pushing a move
+            self.is_over = True
+            self.determine_game_result()
+            self.save_pgn()
+            return {
+                "status": "success",
+                "move_san": "pass",
+                "fen": self.board.fen(),
+                "is_over": True,
+                "result": self.game.headers.get("Result"),
+                "rationale": result.get("rationale", "No rationale provided."),
+                "cost": result.get("cost", 0),
+                "latency": result.get("latency", 0),
+            }
 
         # Store move info before making it
         san_move = self.board.san(move)
