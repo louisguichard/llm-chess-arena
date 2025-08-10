@@ -149,13 +149,20 @@ function handleStartBattle() {
     };
 
     eventSource.onerror = function(err) {
-        console.warn("EventSource connection issue; closing stream:", err);
-        try { eventSource.close(); } catch (_) {}
-        // Mark as finished (we will not auto-retry on the client to avoid duplicate games)
-        if (state.gameStatus === 'playing') {
-            state.gameStatus = 'finished';
-            state.winner = 'Aborted due to connection error';
-            render();
+        console.warn(
+            "EventSource connection error. The browser will attempt to reconnect.",
+            err
+        );
+
+        // The EventSource API includes a built-in reconnection mechanism.
+        // We will only intervene if the connection is permanently closed.
+        if (eventSource.readyState === EventSource.CLOSED) {
+            console.error("EventSource connection has been permanently closed.");
+            if (state.gameStatus === "playing") {
+                state.gameStatus = "finished";
+                state.winner = "Aborted due to connection error";
+                render();
+            }
         }
     };
 }
