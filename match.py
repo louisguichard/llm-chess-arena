@@ -8,6 +8,7 @@ import chess
 import chess.pgn
 from prompts import SYSTEM_PROMPT, build_user_prompt, RetryReason
 from gcp import write_file_to_gcs
+from logger import log
 
 
 class ChessGame:
@@ -57,11 +58,11 @@ class ChessGame:
         try:
             parsed_response = json.loads(response.strip())
         except json.JSONDecodeError:
-            print(f"Error parsing JSON: {response}")
+            log.warning(f"Error parsing JSON: {response}")
             return {"error": RetryReason.INVALID_JSON}
 
         if "move" not in parsed_response:
-            print(f"Missing 'move' key in response: {parsed_response}")
+            log.warning(f"Missing 'move' key in response: {parsed_response}")
             return {"error": RetryReason.MISSING_MOVE_KEY}
 
         try:
@@ -71,7 +72,7 @@ class ChessGame:
                 return {"move": move_str, "rationale": rationale}
             return {"move": chess.Move.from_uci(move_str), "rationale": rationale}
         except ValueError:
-            print(f"Error parsing UCI move: {move_str}")
+            log.warning(f"Error parsing UCI move: {move_str}")
             return {"error": RetryReason.INVALID_UCI_FORMAT}
 
     def terminate_game(self, result, termination_reason):
@@ -109,12 +110,12 @@ class ChessGame:
             latency = response_data.get("latency", 0)
 
             response = completion.choices[0].message.content
-            print(f"- {player.name()}: {response}")
+            log.info(f"- {player.name()}: {response}")
             if response:
                 messages.append({"role": "assistant", "content": response})
             else:
-                print(f"Messages: {messages}")
-                print(f"Completion: {completion}")
+                log.warning(f"Messages: {messages}")
+                log.warning(f"Completion: {completion}")
                 messages.append({"role": "assistant", "content": ""})
                 error_reason = RetryReason.EMPTY_RESPONSE
 
@@ -134,7 +135,7 @@ class ChessGame:
                     error_reason = RetryReason.ILLEGAL_MOVE
             else:
                 error_reason = result["error"]
-            print(f"⚠️ Error on this move: {error_reason}")
+            log.warning(f"⚠️ Error on this move: {error_reason}")
             # Add error reason to the conversation
             messages.append({"role": "user", "content": error_reason.value})
 
@@ -261,9 +262,9 @@ class ChessGame:
         black_moves = total_moves // 2
 
         # Print and save results
-        print(f"Game result: {self.game.headers['Result']}")
-        print(f"Termination reason: {self.game.headers['Termination']}")
-        print(
+        log.info(f"Game result: {self.game.headers['Result']}")
+        log.info(f"Termination reason: {self.game.headers['Termination']}")
+        log.info(
             f"Game stats: W({white_moves}m, {self.white_time:.1f}s, ${self.white_cost:.4f}) vs B({black_moves}m, {self.black_time:.1f}s, ${self.black_cost:.4f})"
         )
 

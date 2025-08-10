@@ -6,6 +6,7 @@ from client import OpenRouterClient
 import json
 import chess
 import traceback
+from logger import log
 
 app = Flask(__name__)
 
@@ -50,7 +51,7 @@ def start_game():
         black_cost = 0.0
 
         try:
-            print("Starting game stream...")
+            log.info("Starting game stream...")
             while not game.is_over:
                 # Check whose turn it is before the move
                 is_white_turn = game.board.turn == chess.WHITE
@@ -66,13 +67,13 @@ def start_game():
                         black_cost += move_result.get("cost", 0.0)
 
                     event_data = f"data: {json.dumps(move_result)}\n\n"
-                    print(f"Sending event: {event_data.strip()}")
+                    log.info(f"Sending event: {event_data.strip()}")
                     yield event_data
                 else:
                     break
         except Exception as e:
-            print(f"An exception occurred during the game stream: {e}")
-            print(traceback.format_exc())
+            log.error(f"An exception occurred during the game stream: {e}")
+            log.error(traceback.format_exc())
             error_event = {
                 "error": "An internal error occurred during the game.",
                 "details": str(e),
@@ -80,7 +81,7 @@ def start_game():
             event_data = f"data: {json.dumps(error_event)}\n\n"
             yield event_data
         finally:
-            print("Game stream finished.")
+            log.info("Game stream finished.")
 
         # Calculate moves: total moves divided by 2, white gets the extra if odd
         total_moves = len(game.board.move_stack)
@@ -102,8 +103,8 @@ def start_game():
                 white_cost=white_cost,
                 black_cost=black_cost,
             )
-            print(f"Updated ratings: {white_model} vs {black_model} -> {result}")
-            print(
+            log.info(f"Updated ratings: {white_model} vs {black_model} -> {result}")
+            log.info(
                 f"Game stats: W({white_moves}m, {white_time:.1f}s, ${white_cost:.4f}) vs B({black_moves}m, {black_time:.1f}s, ${black_cost:.4f})"
             )
 
@@ -114,7 +115,7 @@ def start_game():
             "termination": game.game.headers.get("Termination"),
         }
         event_data = f"data: {json.dumps(final_state)}\n\n"
-        print(f"Sending final event: {event_data.strip()}")
+        log.info(f"Sending final event: {event_data.strip()}")
         yield event_data
 
     return Response(generate_moves(), mimetype="text/event-stream")

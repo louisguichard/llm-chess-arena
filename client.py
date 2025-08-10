@@ -5,6 +5,7 @@ import time
 
 from dotenv import load_dotenv
 from openai import OpenAI
+from logger import log
 
 
 class OpenRouterClient:
@@ -67,11 +68,11 @@ class OpenRouterClient:
             # Print request cost
             try:
                 cost = completion.usage.cost
-                print(f"Request cost: {cost:.3f}€ | latency: {latency:.1f}s")
+                log.info(f"Request cost: {cost:.3f}€ | latency: {latency:.1f}s")
             except Exception as e:
-                print(f"Error getting upstream inference cost: {e}")
+                log.error(f"Error getting upstream inference cost: {e}")
 
             return {"completion": completion, "cost": cost, "latency": latency}
         except Exception as e:
-            print(f"Error getting response from {self.model}: {e}")
+            log.error(f"Error getting response from {self.model}: {e}")
             return None
