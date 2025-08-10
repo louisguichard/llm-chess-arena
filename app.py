@@ -5,6 +5,7 @@ from match import ChessGame
 from client import OpenRouterClient
 import json
 import chess
+import traceback
 
 app = Flask(__name__)
 
@@ -48,25 +49,38 @@ def start_game():
         white_cost = 0.0
         black_cost = 0.0
 
-        while not game.is_over:
-            # Check whose turn it is before the move
-            is_white_turn = game.board.turn == chess.WHITE
+        try:
+            print("Starting game stream...")
+            while not game.is_over:
+                # Check whose turn it is before the move
+                is_white_turn = game.board.turn == chess.WHITE
 
-            move_result = game.play_next_move()
-            if move_result:
-                # Accumulate statistics based on whose turn it was
-                if is_white_turn:
-                    white_time += move_result.get("latency", 0.0)
-                    white_cost += move_result.get("cost", 0.0)
+                move_result = game.play_next_move()
+                if move_result:
+                    # Accumulate statistics based on whose turn it was
+                    if is_white_turn:
+                        white_time += move_result.get("latency", 0.0)
+                        white_cost += move_result.get("cost", 0.0)
+                    else:
+                        black_time += move_result.get("latency", 0.0)
+                        black_cost += move_result.get("cost", 0.0)
+
+                    event_data = f"data: {json.dumps(move_result)}\n\n"
+                    print(f"Sending event: {event_data.strip()}")
+                    yield event_data
                 else:
-                    black_time += move_result.get("latency", 0.0)
-                    black_cost += move_result.get("cost", 0.0)
-
-                event_data = f"data: {json.dumps(move_result)}\n\n"
-                print(f"Sending event: {event_data.strip()}")
-                yield event_data
-            else:
-                break
+                    break
+        except Exception as e:
+            print(f"An exception occurred during the game stream: {e}")
+            print(traceback.format_exc())
+            error_event = {
+                "error": "An internal error occurred during the game.",
+                "details": str(e),
+            }
+            event_data = f"data: {json.dumps(error_event)}\n\n"
+            yield event_data
+        finally:
+            print("Game stream finished.")
 
         # Calculate moves: total moves divided by 2, white gets the extra if odd
         total_moves = len(game.board.move_stack)

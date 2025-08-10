@@ -24,6 +24,7 @@ class OpenRouterClient:
         self.client = OpenAI(
             base_url="https://openrouter.ai/api/v1",
             api_key=api_key,
+            timeout=300,
         )
         self.model = model
         self._app_title = "LLM Chess Arena"
