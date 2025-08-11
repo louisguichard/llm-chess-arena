@@ -76,5 +76,7 @@ class OpenRouterClient:
 
             return {"completion": completion, "cost": cost, "latency": latency}
         except Exception as e:
-            log.error(f"Error getting response from {self.model}: {e}")
+            log.error(
+                f"Error getting response from {self.model}: {type(e).__name__} - {e}"
+            )
             return None
