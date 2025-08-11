@@ -80,7 +80,9 @@ def start_game():
                     white_cost=game.white_cost,
                     black_cost=game.black_cost,
                 )
-                log.info(f"Updated ratings: {white_model} vs {black_model} -> {result}")
+                log.debug(
+                    f"Updated ratings: {white_model} vs {black_model} -> {result}"
+                )
 
             final_state = {
                 "is_over": True,
@@ -114,7 +116,7 @@ def start_game():
                 if message.get("is_over") or message.get("error"):
                     game_is_running = False
             except Empty:
-                log.info("Sending keepalive to prevent timeout.")
+                log.debug("Sending keepalive to prevent timeout.")
                 yield ": keepalive\n\n"
         log.info("Game stream finished.")
 
@@ -127,4 +129,5 @@ def start_game():
 
 
 if __name__ == "__main__":
-    app.run(info=True)
+    # Minimal local run; no extra flags to avoid errors
+    app.run()

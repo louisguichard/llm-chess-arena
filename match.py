@@ -107,21 +107,26 @@ class ChessGame:
 
         for i in range(1 + max_retries):
             # Ask the player for its move
-            log.info(
+            log.debug(
                 f"Attempt {i + 1}/{1 + max_retries}: Getting move from {player.name()}..."
             )
-            log.info(
+            log.debug(
                 f"Prompt to {player.name()} (role=user):\n{messages[-1]['content']}"
             )
             response_data = player.chat(messages)
-            log.info(
+            log.debug(
                 f"Attempt {i + 1}/{1 + max_retries}: Received response for {player.name()}."
             )
             if not response_data:
                 # Handle case where chat returns None
                 error_reason = RetryReason.EMPTY_RESPONSE
                 messages.append(
-                    {"role": "user", "content": build_retry_message(error_reason)}
+                    {
+                        "role": "user",
+                        "content": build_user_prompt(self.board)
+                        + "\n\n"
+                        + build_retry_message(error_reason),
+                    }
                 )
                 continue
 
@@ -167,9 +172,12 @@ class ChessGame:
             messages.append(
                 {
                     "role": "user",
-                    "content": build_retry_message(error_reason, attempted),
+                    "content": build_user_prompt(self.board)
+                    + "\n\n"
+                    + build_retry_message(error_reason, attempted),
                 }
             )
+            messages.append({"role": "user", "content": build_user_prompt(self.board)})
 
         # All attempts failed
         return {"error": error_reason}
@@ -313,7 +321,7 @@ class ChessGame:
         # Print and save results
         log.info(f"Game result: {self.game.headers['Result']}")
         log.info(f"Termination reason: {self.game.headers['Termination']}")
-        log.info(
+        log.debug(
             f"Game stats: W({white_moves}m, {self.white_time:.1f}s, ${self.white_cost:.4f}) vs B({black_moves}m, {self.black_time:.1f}s, ${self.black_cost:.4f})"
         )
 

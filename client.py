@@ -35,7 +35,7 @@ class OpenRouterClient:
     def chat(self, messages):
         try:
             start = time.time()
-            log.info(f"Sending request to {self.model}...")
+            log.debug(f"Sending request to {self.model}...")
             completion = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
@@ -64,13 +64,13 @@ class OpenRouterClient:
                 },
                 extra_body={"usage": {"include": True}},
             )
-            log.info(f"Received response from {self.model}.")
+            log.debug(f"Received response from {self.model}.")
             latency = time.time() - start
             cost = 0
             # Print request cost
             try:
                 cost = completion.usage.cost
-                log.info(f"Request cost: {cost:.3f}€ | latency: {latency:.1f}s")
+                log.debug(f"Request cost: {cost:.3f}€ | latency: {latency:.1f}s")
             except Exception as e:
                 log.error(f"Error getting upstream inference cost: {e}")
 
