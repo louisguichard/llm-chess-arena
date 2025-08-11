@@ -1,16 +1,47 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LLM Chess Arena</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body class="bg-gray-100 dark:bg-zinc-950 text-gray-900 dark:text-gray-100 font-sans">
-    <div id="app">
-        <!-- App content will be rendered here by JavaScript -->
-    </div>
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block head %}
+    <script>
+        const PIECE_UNICODE = {
+            'p': '♟︎', 'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚',
+            'P': '♙', 'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔',
+        };
+
+        function showPage(page) {
+            if (page === 'battle') {
+                document.getElementById('battle-page').style.display = 'block';
+                document.getElementById('leaderboard-page').style.display = 'none';
+                document.querySelector('[data-page="battle"]').classList.add('text-indigo-500');
+                document.querySelector('[data-page="leaderboard"]').classList.remove('text-indigo-500');
+            } else {
+                document.getElementById('battle-page').style.display = 'none';
+                document.getElementById('leaderboard-page').style.display = 'block';
+                document.querySelector('[data-page="battle"]').classList.remove('text-indigo-500');
+                document.querySelector('[data-page="leaderboard"]').classList.add('text-indigo-500');
+            }
+        }
+    </script>
+{% endblock %}
+
+{% block content %}
+<div id="battle-page">
+    {% include 'battle.html' %}
+</div>
+<div id="leaderboard-page" style="display: none;">
+    {% include 'leaderboard.html' %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/battle.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.nav-link, .mobile-nav-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                showPage(e.currentTarget.dataset.page);
+            });
+        });
+    });
+</script>
+{% endblock %}

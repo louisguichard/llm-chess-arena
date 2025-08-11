@@ -20,19 +20,71 @@ MODELS_FILE = "models.txt"
 
 @app.route("/")
 def index():
-    return render_template("index.html")
-
-
-@app.route("/api/models")
-def get_models():
     models = read_models_from_file(MODELS_FILE)
-    return jsonify(models)
-
-
-@app.route("/api/ratings")
-def get_ratings():
     ratings = RatingsTable()
-    return jsonify(ratings.ratings)
+
+    # Prepare data for battle page
+    llms = []
+    for model_id in models:
+        stats = ratings.get_stats(model_id)
+        llms.append(
+            {
+                "id": model_id,
+                "name": model_id.split("/")[1] or model_id,
+                "provider": model_id.split("/")[0] or "Unknown",
+                "elo": ratings.get(model_id),
+            }
+        )
+
+    # Prepare data for leaderboard page
+    leaderboard_data = []
+    sorted_players = sorted(
+        ratings.ratings.items(), key=lambda item: item[1]["rating"], reverse=True
+    )
+
+    for player_id, data in sorted_players:
+        stats = ratings.get_stats(player_id)
+        total_games = stats["total"]
+        win_rate = round(stats["wins"] / total_games * 100) if total_games > 0 else 0
+        avg_time_per_move = (
+            (stats["time"] / stats["moves"]) if stats["moves"] > 0 else 0
+        )
+        avg_cost_per_move = (
+            (stats["cost"] / stats["moves"]) if stats["moves"] > 0 else 0
+        )
+
+        leaderboard_data.append(
+            {
+                "id": player_id,
+                "name": player_id.split("/")[1] or player_id,
+                "provider": player_id.split("/")[0] or "Unknown",
+                "elo": data["rating"],
+                "matchesPlayed": total_games,
+                "winRate": win_rate,
+                "wins": stats["wins"],
+                "draws": stats["draws"],
+                "losses": stats["losses"],
+                "moves": stats["moves"],
+                "avgTimePerMove": avg_time_per_move,
+                "avgCostPerMove": avg_cost_per_move,
+            }
+        )
+
+    return render_template(
+        "index.html",
+        llms=llms,
+        leaderboard_data=leaderboard_data,
+        initial_board=[
+            ["r", "n", "b", "q", "k", "b", "n", "r"],
+            ["p", "p", "p", "p", "p", "p", "p", "p"],
+            ["", "", "", "", "", "", "", ""],
+            ["", "", "", "", "", "", "", ""],
+            ["", "", "", "", "", "", "", ""],
+            ["", "", "", "", "", "", "", ""],
+            ["P", "P", "P", "P", "P", "P", "P", "P"],
+            ["R", "N", "B", "Q", "K", "B", "N", "R"],
+        ],
+    )
 
 
 @app.route("/api/start_game", methods=["GET"])
@@ -107,4 +159,4 @@ def start_game():
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)

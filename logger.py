@@ -6,12 +6,17 @@ import google.cloud.logging
 
 def setup_logger():
     """Set up the logger."""
-    client = google.cloud.logging.Client()
-    client.setup_logging(log_level=logging.DEBUG)
-
     logger = logging.getLogger("llm-chess-arena")
-    logger.setLevel(logging.DEBUG)
+    try:
+        client = google.cloud.logging.Client()
+        client.setup_logging(log_level=logging.DEBUG)
+    except Exception:
+        print(
+            "Could not set up Google Cloud Logging. Falling back to standard logging."
+        )
+        logging.basicConfig(level=logging.DEBUG)
 
+    logger.setLevel(logging.DEBUG)
     return logger
 
 
