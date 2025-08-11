@@ -3,22 +3,19 @@ from flask import (
     render_template,
     jsonify,
     request,
-    Response,
 )
 from utils import read_models_from_file
 from ratings import RatingsTable
 from match import ChessGame
 from client import OpenRouterClient
-import json
 import traceback
 from logger import log
-import gevent
-from gevent.queue import Queue
-
+import uuid
 
 app = Flask(__name__)
 
 MODELS_FILE = "models.txt"
+games = {}
 
 
 @app.route("/")
@@ -90,10 +87,11 @@ def index():
     )
 
 
-@app.route("/api/start_game", methods=["GET"])
+@app.route("/api/start_game", methods=["POST"])
 def start_game():
-    white_model = request.args.get("white_player")
-    black_model = request.args.get("black_player")
+    data = request.get_json()
+    white_model = data.get("white_player")
+    black_model = data.get("black_player")
 
     if not white_model or not black_model:
         return jsonify({"error": "Both players must be selected."}), 400
@@ -103,18 +101,28 @@ def start_game():
         black_player=OpenRouterClient(black_model),
     )
 
-    q = Queue()
+    game_id = str(uuid.uuid4())
+    games[game_id] = game
+    log.info(f"Started new game: {game_id}")
 
-    def run_game():
-        """Run game in a background greenlet and put results on a queue."""
-        log.info("Starting game in background greenlet...")
-        try:
-            while not game.is_over:
-                move_result = game.play_next_move(max_retries=2)
-                if move_result is None:
-                    break
-                q.put(move_result)
+    return jsonify({"game_id": game_id})
 
+
+@app.route("/api/play_move/<game_id>", methods=["POST"])
+def play_move(game_id):
+    game = games.get(game_id)
+    if not game:
+        return jsonify({"error": "Game not found."}), 404
+
+    try:
+        if game.is_over:
+            return jsonify(
+                {"status": "game_over", "result": game.game.headers.get("Result")}
+            )
+
+        move_result = game.play_next_move(max_retries=2)
+
+        if move_result is None or game.is_over:
             total_moves = len(game.board.move_stack)
             white_moves = (total_moves + 1) // 2
             black_moves = total_moves // 2
@@ -123,8 +131,8 @@ def start_game():
             if result:
                 ratings = RatingsTable()
                 ratings.apply_result(
-                    white_model,
-                    black_model,
+                    game.white_player.name(),
+                    game.black_player.name(),
                     result,
                     white_moves=white_moves,
                     black_moves=black_moves,
@@ -134,7 +142,7 @@ def start_game():
                     black_cost=game.black_cost,
                 )
                 log.debug(
-                    f"Updated ratings: {white_model} vs {black_model} -> {result}"
+                    f"Updated ratings: {game.white_player.name()} vs {game.black_player.name()} -> {result}"
                 )
 
             final_state = {
@@ -142,44 +150,18 @@ def start_game():
                 "result": result,
                 "termination": game.game.headers.get("Termination"),
             }
-            q.put(final_state)
-        except Exception as e:
-            log.error(f"Error during game execution: {e}")
-            log.error(traceback.format_exc())
-            error_event = {
-                "error": "An internal error occurred during the game.",
-                "details": str(e),
-            }
-            q.put(error_event)
-        finally:
-            log.info("Background game greenlet finished.")
-            q.put(StopIteration)
+            return jsonify(final_state)
 
-    def generate_moves():
-        """Yields game events and keep-alive pings."""
-        log.info("Starting game stream...")
-        gevent.spawn(run_game)
-        try:
-            while True:
-                try:
-                    result = q.get(timeout=15)
-                    if result is StopIteration:
-                        break
-                    yield f"data: {json.dumps(result)}\n\n"
-                except gevent.queue.Empty:
-                    yield ": keep-alive\n\n"
-        except Exception as e:
-            log.error(f"Error during game stream: {e}")
-            log.error(traceback.format_exc())
-        finally:
-            log.info("Game stream finished.")
+        return jsonify(move_result)
 
-    headers = {"Cache-Control": "no-cache"}
-    return Response(
-        generate_moves(),
-        headers=headers,
-        content_type="text/event-stream; charset=utf-8",
-    )
+    except Exception as e:
+        log.error(f"Error during game execution: {e}")
+        log.error(traceback.format_exc())
+        error_event = {
+            "error": "An internal error occurred during the game.",
+            "details": str(e),
+        }
+        return jsonify(error_event), 500
 
 
 if __name__ == "__main__":

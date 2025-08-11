@@ -6,4 +6,3 @@ gunicorn
 google-cloud-aiplatform
 google-cloud-storage
 google-cloud-logging
-gevent

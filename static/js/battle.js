@@ -2,7 +2,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('start-game-form');
     const startButton = document.getElementById('start-battle-btn');
     const winnerText = document.getElementById('winner-text');
-    let eventSource = null;
+    let gameId = null;
+    let isGameRunning = false;
 
     let whiteTime = 0;
     let blackTime = 0;
@@ -10,8 +11,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let blackCost = 0;
     let turn = 'white';
 
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
         e.preventDefault();
+
+        if (isGameRunning) {
+            return;
+        }
 
         const whitePlayer = form.elements.white_player.value;
         const blackPlayer = form.elements.black_player.value;
@@ -21,32 +26,59 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        if (eventSource) {
-            eventSource.close();
-        }
-
         // Reset UI
         winnerText.style.display = 'none';
         document.getElementById('white-moves').innerHTML = '<p class="text-gray-400 dark:text-gray-500 italic h-full flex items-center justify-center">Waiting for game to start...</p>';
         document.getElementById('black-moves').innerHTML = '<p class="text-gray-400 dark:text-gray-500 italic h-full flex items-center justify-center">Waiting for game to start...</p>';
         
-        const params = new URLSearchParams({
-            white_player: whitePlayer,
-            black_player: blackPlayer,
-        });
-
-        eventSource = new EventSource(`/api/start_game?${params.toString()}`);
-        
         startButton.disabled = true;
+        isGameRunning = true;
 
-        eventSource.onmessage = (event) => {
-            const gameData = JSON.parse(event.data);
+        try {
+            const response = await fetch('/api/start_game', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    white_player: whitePlayer,
+                    black_player: blackPlayer
+                })
+            });
+
+            const data = await response.json();
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
+            gameId = data.game_id;
+            highlightCurrentPlayer();
+            playNextMove();
+
+        } catch (error) {
+            console.error('Error starting game:', error);
+            winnerText.textContent = 'Error starting game. Please try again.';
+            winnerText.style.display = 'block';
+            startButton.disabled = false;
+            isGameRunning = false;
+        }
+    });
+
+    async function playNextMove() {
+        if (!gameId) return;
+
+        try {
+            const response = await fetch(`/api/play_move/${gameId}`, {
+                method: 'POST'
+            });
+
+            const gameData = await response.json();
 
             if (gameData.error) {
                 console.error('Game error:', gameData.details);
                 winnerText.textContent = `Error: ${gameData.details}`;
                 winnerText.style.display = 'block';
-                eventSource.close();
+                isGameRunning = false;
                 startButton.disabled = false;
                 return;
             }
@@ -54,29 +86,31 @@ document.addEventListener('DOMContentLoaded', () => {
             if (gameData.is_over) {
                 winnerText.textContent = `Game Over: ${gameData.result} (${gameData.termination})`;
                 winnerText.style.display = 'block';
-                eventSource.close();
+                isGameRunning = false;
                 startButton.disabled = false;
                 document.getElementById('white-panel').classList.remove('ring-2', 'ring-indigo-500', 'shadow-lg');
                 document.getElementById('black-panel').classList.remove('ring-2', 'ring-indigo-500', 'shadow-lg');
+                if (gameData.fen) {
+                    updateBoard(gameData.fen);
+                    updateStats(gameData);
+                    updateMoveHistory(gameData);
+                }
             } else if (gameData.status === 'success') {
                 updateBoard(gameData.fen);
                 updateStats(gameData);
                 updateMoveHistory(gameData);
                 turn = turn === 'white' ? 'black' : 'white';
                 highlightCurrentPlayer();
+                setTimeout(playNextMove, 500); // Wait 500ms before next move
             }
-        };
-
-        eventSource.onerror = (err) => {
-            console.error('EventSource failed:', err);
+        } catch (err) {
+            console.error('Error during move:', err);
             winnerText.textContent = 'Connection error. Please try again.';
             winnerText.style.display = 'block';
-            eventSource.close();
+            isGameRunning = false;
             startButton.disabled = false;
-        };
-
-        highlightCurrentPlayer();
-    });
+        }
+    }
 
     function highlightCurrentPlayer() {
         if (turn === 'white') {

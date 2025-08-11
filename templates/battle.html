@@ -65,7 +65,7 @@
 {% endmacro %}
 
 <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <form id="start-game-form" action="{{ url_for('start_game') }}" method="get">
+    <form id="start-game-form" action="{{ url_for('start_game') }}" method="post">
         <div class="grid grid-cols-1 xl:grid-cols-7 gap-6 lg:gap-8">
             <div class="xl:col-span-2" id="player1-panel">
                 {{ player_panel('white', llms) }}
