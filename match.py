@@ -177,7 +177,6 @@ class ChessGame:
                     + build_retry_message(error_reason, attempted),
                 }
             )
-            messages.append({"role": "user", "content": build_user_prompt(self.board)})
 
         # All attempts failed
         return {"error": error_reason}
