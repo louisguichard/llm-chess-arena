@@ -33,7 +33,7 @@ def run_tournament(models, total_matches):
 
         # Play game
         game = ChessGame(white, black)
-        game_data = game.play(max_retries=1)
+        game_data = game.play(max_retries=2)
         result = game_data["result"]
         print(f"Game n°{i + 1} result: {result}")
 

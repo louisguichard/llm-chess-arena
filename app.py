@@ -127,4 +127,4 @@ def start_game():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(info=True)

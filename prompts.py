@@ -77,6 +77,7 @@ Return exactly ONE move to PLAY now, as a SINGLE JSON object:
 Hard rules:
 - Output ONLY the JSON object. No code fences, no text before/after.
 - "move" MUST match ^[a-h][1-8][a-h][1-8][qrbn]?$ and MUST be LEGAL in the latest Turn Context.
+- Make sure that the move you are proposing is legal.
 - Promotion: use "q" unless another promotion is clearly better and legal.
 - If checkmated: {"rationale":"…","move":"resign"}
 - If stalemate:  {"rationale":"…","move":"pass"}"""
