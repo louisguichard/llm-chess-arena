@@ -56,11 +56,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 winnerText.style.display = 'block';
                 eventSource.close();
                 startButton.disabled = false;
+                document.getElementById('white-panel').classList.remove('ring-2', 'ring-indigo-500', 'shadow-lg');
+                document.getElementById('black-panel').classList.remove('ring-2', 'ring-indigo-500', 'shadow-lg');
             } else if (gameData.status === 'success') {
                 updateBoard(gameData.fen);
                 updateStats(gameData);
                 updateMoveHistory(gameData);
                 turn = turn === 'white' ? 'black' : 'white';
+                highlightCurrentPlayer();
             }
         };
 
@@ -71,7 +74,19 @@ document.addEventListener('DOMContentLoaded', () => {
             eventSource.close();
             startButton.disabled = false;
         };
+
+        highlightCurrentPlayer();
     });
+
+    function highlightCurrentPlayer() {
+        if (turn === 'white') {
+            document.getElementById('white-panel').classList.add('ring-2', 'ring-indigo-500', 'shadow-lg');
+            document.getElementById('black-panel').classList.remove('ring-2', 'ring-indigo-500', 'shadow-lg');
+        } else {
+            document.getElementById('black-panel').classList.add('ring-2', 'ring-indigo-500', 'shadow-lg');
+            document.getElementById('white-panel').classList.remove('ring-2', 'ring-indigo-500', 'shadow-lg');
+        }
+    }
 
     function setupPlayerPanels() {
         const playerPanels = document.querySelectorAll('.player-panel');
@@ -171,24 +186,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateMoveHistory(gameData) {
         const moveHistoryContainer = document.getElementById(`${turn}-moves`);
-        if (moveHistoryContainer.querySelector('p')) {
+        
+        // Clear the "Waiting for game to start..." message on the first move
+        const initialMessage = moveHistoryContainer.querySelector('p');
+        if (initialMessage && /Waiting for game to start/.test(initialMessage.innerText)) {
             moveHistoryContainer.innerHTML = '';
+        }
+
+        // Un-highlight the previous move and add a separator
+        const lastMove = moveHistoryContainer.querySelector('.last-move');
+        if (lastMove) {
+            lastMove.classList.remove('last-move', 'font-bold');
+            lastMove.classList.add('pt-3', 'mt-3', 'border-t', 'border-gray-200', 'dark:border-zinc-700');
         }
         
         const moveElement = document.createElement('div');
+        // Add a class to identify the last move for highlighting
+        moveElement.classList.add('last-move', 'font-bold'); 
         moveElement.innerHTML = `
             <p class="font-mono text-gray-800 dark:text-gray-200 font-bold">${gameData.move_san}</p>
             <p class="text-gray-500 dark:text-gray-400 italic text-xs break-words">"${gameData.rationale}"</p>
         `;
-        
-        const firstChild = moveHistoryContainer.firstChild;
-        if (firstChild) {
-            firstChild.classList.remove('font-bold');
-            const borderDiv = document.createElement('div');
-            borderDiv.className = 'border-t border-gray-200 dark:border-zinc-700 pt-2';
-            moveHistoryContainer.insertBefore(borderDiv, firstChild);
-            borderDiv.appendChild(firstChild);
-        }
         
         moveHistoryContainer.prepend(moveElement);
     }

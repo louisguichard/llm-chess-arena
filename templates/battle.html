@@ -1,5 +1,5 @@
 {% macro player_panel(color, llms) %}
-<div class="player-panel bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-4 md:p-6 flex flex-col h-full transition-all duration-300">
+<div id="{{ color }}-panel" class="player-panel bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-4 md:p-6 flex flex-col h-full transition-all duration-300">
     <input type="hidden" name="{{ color }}_player" class="player-input">
     <div class="relative mb-4">
         <button type="button" class="player-selector-button w-full flex items-center text-left p-2 -m-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-zinc-800/80 disabled:cursor-not-allowed disabled:hover:bg-transparent">
