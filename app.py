@@ -16,12 +16,12 @@ app = Flask(__name__)
 
 MODELS_FILE = "models.txt"
 games = {}
+ratings = RatingsTable()
 
 
 @app.route("/")
 def index():
     models = read_models_from_file(MODELS_FILE)
-    ratings = RatingsTable()
 
     # Prepare data for battle page
     llms = []
@@ -129,7 +129,6 @@ def play_move(game_id):
 
             result = game.game.headers.get("Result")
             if result:
-                ratings = RatingsTable()
                 ratings.apply_result(
                     game.white_player.name(),
                     game.black_player.name(),
