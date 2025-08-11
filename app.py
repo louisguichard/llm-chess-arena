@@ -13,6 +13,8 @@ from client import OpenRouterClient
 import json
 import traceback
 from logger import log
+import threading
+from queue import Queue, Empty
 
 app = Flask(__name__)
 
@@ -49,55 +51,72 @@ def start_game():
         black_player=OpenRouterClient(black_model),
     )
 
-    @stream_with_context
-    def generate_moves():
-        log.info("Starting game stream...")
+    q = Queue()
+
+    def worker():
+        log.info("Starting game worker thread...")
         try:
             while not game.is_over:
                 move_result = game.play_next_move()
                 if move_result is None:
                     break
-                event_data = f"data: {json.dumps(move_result)}\n\n"
-                yield event_data
+                q.put(move_result)
+
+            total_moves = len(game.board.move_stack)
+            white_moves = (total_moves + 1) // 2
+            black_moves = total_moves // 2
+
+            result = game.game.headers.get("Result")
+            if result:
+                ratings = RatingsTable()
+                ratings.apply_result(
+                    white_model,
+                    black_model,
+                    result,
+                    white_moves=white_moves,
+                    black_moves=black_moves,
+                    white_time=game.white_time,
+                    black_time=game.black_time,
+                    white_cost=game.white_cost,
+                    black_cost=game.black_cost,
+                )
+                log.info(f"Updated ratings: {white_model} vs {black_model} -> {result}")
+
+            final_state = {
+                "is_over": True,
+                "result": result,
+                "termination": game.game.headers.get("Termination"),
+            }
+            q.put(final_state)
+
         except Exception as e:
-            log.error(f"An exception occurred during the game stream: {e}")
+            log.error(f"An exception occurred in the game worker thread: {e}")
             log.error(traceback.format_exc())
             error_event = {
                 "error": "An internal error occurred during the game.",
                 "details": str(e),
             }
-            yield f"data: {json.dumps(error_event)}\n\n"
+            q.put(error_event)
         finally:
-            log.info("Game stream finished.")
+            log.info("Game worker thread finished.")
 
-        # Calculate total moves for stats
-        total_moves = len(game.board.move_stack)
-        white_moves = (total_moves + 1) // 2
-        black_moves = total_moves // 2
+    threading.Thread(target=worker).start()
 
-        # Update ratings using game-tracked stats
-        result = game.game.headers.get("Result")
-        if result:
-            ratings = RatingsTable()
-            ratings.apply_result(
-                white_model,
-                black_model,
-                result,
-                white_moves=white_moves,
-                black_moves=black_moves,
-                white_time=game.white_time,
-                black_time=game.black_time,
-                white_cost=game.white_cost,
-                black_cost=game.black_cost,
-            )
-            log.info(f"Updated ratings: {white_model} vs {black_model} -> {result}")
-
-        final_state = {
-            "is_over": True,
-            "result": result,
-            "termination": game.game.headers.get("Termination"),
-        }
-        yield f"data: {json.dumps(final_state)}\n\n"
+    @stream_with_context
+    def generate_moves():
+        log.info("Starting game stream...")
+        game_is_running = True
+        while game_is_running:
+            try:
+                message = q.get(timeout=15)
+                event_data = f"data: {json.dumps(message)}\n\n"
+                yield event_data
+                if message.get("is_over") or message.get("error"):
+                    game_is_running = False
+            except Empty:
+                log.info("Sending keepalive to prevent timeout.")
+                yield ": keepalive\n\n"
+        log.info("Game stream finished.")
 
     headers = {"Cache-Control": "no-cache"}
     return Response(

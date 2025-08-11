@@ -130,7 +130,8 @@ class ChessGame:
             latency = response_data.get("latency", 0)
 
             response = completion.choices[0].message.content
-            log.info(f"- {player.name()}: {response}")
+            response_single_line = response.replace("\n", " ")
+            log.info(f"- {player.name()}: {response_single_line}")
             if response:
                 messages.append({"role": "assistant", "content": response})
             else:
@@ -239,27 +240,27 @@ class ChessGame:
             self.save_pgn()
             return {"status": "error", "message": "Player failed to move."}
 
+        # Extract all data from the result
         move = result["move"]
+        rationale = result.get("rationale", "No rationale provided.")
+        cost = result.get("cost", 0)
+        latency = result.get("latency", 0)
+
+        # Track statistics for the current move, regardless of what the move is
+        if self.board.turn == chess.WHITE:
+            self.white_time += latency
+            self.white_cost += cost
+        else:
+            self.black_time += latency
+            self.black_cost += cost
+
         if move == "resign":
-            # Count this final response toward time/cost
-            if self.board.turn == chess.WHITE:
-                self.white_time += latency
-                self.white_cost += cost
-            else:
-                self.black_time += latency
-                self.black_cost += cost
             self.resign(self.board.turn, "Resigned")
             self.is_over = True
             self.save_pgn()
             return {"status": "resigned"}
+
         if move == "pass":
-            # Count this final response toward time/cost
-            if self.board.turn == chess.WHITE:
-                self.white_time += latency
-                self.white_cost += cost
-            else:
-                self.black_time += latency
-                self.black_cost += cost
             # Stalemate acknowledgment without pushing a move
             self.is_over = True
             self.determine_game_result()
@@ -270,25 +271,13 @@ class ChessGame:
                 "fen": self.board.fen(),
                 "is_over": True,
                 "result": self.game.headers.get("Result"),
-                "rationale": result.get("rationale", "No rationale provided."),
-                "cost": result.get("cost", 0),
-                "latency": result.get("latency", 0),
+                "rationale": rationale,
+                "cost": cost,
+                "latency": latency,
             }
 
-        # Store move info before making it
+        # If it is a standard move, we can make it
         san_move = self.board.san(move)
-        rationale = result.get("rationale", "No rationale provided.")  # Get rationale
-        cost = result.get("cost", 0)
-        latency = result.get("latency", 0)
-
-        # Track statistics based on whose turn it is
-        if self.board.turn == chess.WHITE:
-            self.white_time += latency
-            self.white_cost += cost
-        else:
-            self.black_time += latency
-            self.black_cost += cost
-
         self.board.push(move)
         self.node = self.node.add_variation(move)
 
