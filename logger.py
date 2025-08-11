@@ -1,22 +1,16 @@
 """Centralized logging configuration."""
 
 import logging
-import sys
+import google.cloud.logging
 
 
 def setup_logger():
     """Set up the logger."""
-    logger = logging.getLogger("llm-chess-arena")
-    logger.setLevel(logging.INFO)
+    client = google.cloud.logging.Client()
+    client.setup_logging(log_level=logging.DEBUG)
 
-    # Prevent duplicate logs if already configured
-    if not logger.handlers:
-        handler = logging.StreamHandler(sys.stdout)
-        formatter = logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        )
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
+    logger = logging.getLogger("llm-chess-arena")
+    logger.setLevel(logging.DEBUG)
 
     return logger
 
