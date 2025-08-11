@@ -12,6 +12,9 @@ from client import OpenRouterClient
 import json
 import traceback
 from logger import log
+import gevent
+from gevent.queue import Queue
+
 
 app = Flask(__name__)
 
@@ -100,17 +103,18 @@ def start_game():
         black_player=OpenRouterClient(black_model),
     )
 
-    def generate_moves():
-        log.info("Starting game stream...")
+    q = Queue()
+
+    def run_game():
+        """Run game in a background greenlet and put results on a queue."""
+        log.info("Starting game in background greenlet...")
         try:
-            # Stream each move result as it happens, synchronously.
             while not game.is_over:
                 move_result = game.play_next_move(max_retries=2)
                 if move_result is None:
                     break
-                yield f"data: {json.dumps(move_result)}\n\n"
+                q.put(move_result)
 
-            # After the loop, send final game state and update ratings
             total_moves = len(game.board.move_stack)
             white_moves = (total_moves + 1) // 2
             black_moves = total_moves // 2
@@ -138,15 +142,35 @@ def start_game():
                 "result": result,
                 "termination": game.game.headers.get("Termination"),
             }
-            yield f"data: {json.dumps(final_state)}\n\n"
+            q.put(final_state)
         except Exception as e:
-            log.error(f"Error during game stream: {e}")
+            log.error(f"Error during game execution: {e}")
             log.error(traceback.format_exc())
             error_event = {
                 "error": "An internal error occurred during the game.",
                 "details": str(e),
             }
-            yield f"data: {json.dumps(error_event)}\n\n"
+            q.put(error_event)
+        finally:
+            log.info("Background game greenlet finished.")
+            q.put(StopIteration)
+
+    def generate_moves():
+        """Yields game events and keep-alive pings."""
+        log.info("Starting game stream...")
+        gevent.spawn(run_game)
+        try:
+            while True:
+                try:
+                    result = q.get(timeout=15)
+                    if result is StopIteration:
+                        break
+                    yield f"data: {json.dumps(result)}\n\n"
+                except gevent.queue.Empty:
+                    yield ": keep-alive\n\n"
+        except Exception as e:
+            log.error(f"Error during game stream: {e}")
+            log.error(traceback.format_exc())
         finally:
             log.info("Game stream finished.")
 
