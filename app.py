@@ -57,7 +57,7 @@ def start_game():
         log.info("Starting game worker thread...")
         try:
             while not game.is_over:
-                move_result = game.play_next_move()
+                move_result = game.play_next_move(max_retries=2)
                 if move_result is None:
                     break
                 q.put(move_result)

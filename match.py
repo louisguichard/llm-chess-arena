@@ -96,7 +96,7 @@ class ChessGame:
         else:
             self.terminate_game("1-0", f"Black resigned ({reason})")
 
-    def get_player_move(self, player, max_retries=1):
+    def get_player_move(self, player, max_retries=2):
         """Get a move from the specified player with retry logic."""
 
         # Add current board state to the conversation
@@ -213,7 +213,7 @@ class ChessGame:
             self.white_player if self.board.turn == chess.WHITE else self.black_player
         )
 
-    def play_next_move(self, max_retries=1):
+    def play_next_move(self, max_retries=2):
         """Play one move and return the result.
 
         Returns a dictionary with move info, or None if game is over.
@@ -298,7 +298,7 @@ class ChessGame:
             "latency": latency,
         }
 
-    def play(self, max_retries=1):
+    def play(self, max_retries=2):
         """Play the complete game and return the result and statistics."""
         while not self.is_over:
             move_result = self.play_next_move(max_retries)

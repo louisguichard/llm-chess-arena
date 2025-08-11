@@ -84,16 +84,50 @@ Hard rules:
 
 
 def build_user_prompt(board):
-    """Return the user prompt including color, last move, ASCII board, and clear task."""
+    """Return the user prompt with clear, compact board context."""
     color_str = "White" if board.turn == chess.WHITE else "Black"
     last_uci = last_uci_from_board(board)
     ascii_board_str = board_to_ascii(board)
+
+    def piece_lists(board):
+        pieces_positions = {}
+
+        for position, piece in board.piece_map().items():
+            piece_symbol = piece.symbol()
+            if piece_symbol not in pieces_positions:
+                pieces_positions[piece_symbol] = []
+            position_name = chess.square_name(position)
+            pieces_positions[piece_symbol].append(position_name)
+
+        white_description = (
+            " ; ".join(
+                f"{symbol} {' '.join(sorted(pieces_positions.get(symbol, [])))}"
+                for symbol in "KQRBNP"
+                if pieces_positions.get(symbol)
+            )
+            or "-"
+        )
+
+        black_description = (
+            " ; ".join(
+                f"{symbol} {' '.join(sorted(pieces_positions.get(symbol, [])))}"
+                for symbol in "kqrbnp"
+                if pieces_positions.get(symbol)
+            )
+            or "-"
+        )
+
+        return white_description, black_description
+
+    white_pieces_str, black_pieces_str = piece_lists(board)
+
     return (
-        f"You play {color_str} and it's your turn to play.\n"
-        f"Opponent just played {last_uci}\n"
+        f"You play {color_str} and it's your turn.\n"
+        f"Opponent just played {last_uci}.\n"
+        f"White pieces: {white_pieces_str}\n"
+        f"Black pieces: {black_pieces_str}\n"
         f"ASCII board (ranks 8→1, files a→h):\n{ascii_board_str}\n\n"
-        "Task: PLAY your next move now.\n"
-        "Return ONLY the JSON following the schema from the system message."
+        "Task: choose ONE legal move now and return ONLY the JSON per the schema."
     )
 
 
