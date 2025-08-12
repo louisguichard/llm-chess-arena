@@ -184,10 +184,15 @@ def build_retry_message(reason, attempted=None):
         )
 
     if reason == RetryReason.INVALID_JSON:
-        return (
-            "Your output was not valid JSON or contained extra text. Return ONLY a single JSON object "
-            "with keys in this exact order: 'reasoning', 'rationale', 'move' (no code fences, no text before/after)."
-        )
+        return """Your output was not valid JSON or contained extra text. Return ONLY one JSON object that starts with '{' and ends with '}', with absolutely no text before or after it. The JSON must have keys in this exact order: 'reasoning', 'rationale', 'move'. Do not use code fences or text before or after the JSON.
+
+Valid output example:
+{
+  "reasoning": "Sorry for the invalid response before. I considered central control and king safety...",
+  "rationale": "Develop and control the center while keeping the king safe.",
+  "move": "e2e4"
+}
+"""
 
     if reason == RetryReason.MISSING_MOVE_KEY:
         return (
