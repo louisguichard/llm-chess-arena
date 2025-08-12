@@ -1,6 +1,16 @@
-from gevent import monkey
+import os
+from dotenv import load_dotenv
 
-monkey.patch_all()
+load_dotenv()
+
+if os.getenv("ENV") == "local":
+    print("Running in local environment.")
+else:
+    print("Running in production environment.")
+    from gevent import monkey
+
+    monkey.patch_all()
+
 
 from flask import (
     Flask,
