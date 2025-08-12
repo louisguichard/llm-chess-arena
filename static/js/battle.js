@@ -10,6 +10,19 @@ document.addEventListener('DOMContentLoaded', () => {
     let whiteCost = 0;
     let blackCost = 0;
     let turn = 'white';
+    let moveRetryCount = 0;
+
+    async function fetchWithRetry(url, options, retries = 3, delay = 500) {
+        for (let attempt = 0; attempt <= retries; attempt++) {
+            try {
+                return await fetch(url, options);
+            } catch (err) {
+                if (attempt === retries) throw err;
+                const backoff = delay * Math.pow(2, attempt);
+                await new Promise(r => setTimeout(r, backoff));
+            }
+        }
+    }
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -35,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
         isGameRunning = true;
 
         try {
-            const response = await fetch('/api/start_game', {
+            const response = await fetchWithRetry('/api/start_game', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -44,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     white_player: whitePlayer,
                     black_player: blackPlayer
                 })
-            });
+            }, 2, 400);
 
             const data = await response.json();
             if (data.error) {
@@ -68,9 +81,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!gameId) return;
 
         try {
-            const response = await fetch(`/api/play_move/${gameId}`, {
+            const response = await fetchWithRetry(`/api/play_move/${gameId}`, {
                 method: 'POST'
-            });
+            }, 5, 300);
 
             const gameData = await response.json();
 
@@ -84,6 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (gameData.is_over) {
+                moveRetryCount = 0;
                 winnerText.textContent = `Game Over: ${gameData.result} (${gameData.termination})`;
                 winnerText.style.display = 'block';
                 isGameRunning = false;
@@ -96,6 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     updateMoveHistory(gameData);
                 }
             } else if (gameData.status === 'success') {
+                moveRetryCount = 0;
                 updateBoard(gameData.fen);
                 updateStats(gameData);
                 updateMoveHistory(gameData);
@@ -104,11 +119,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 setTimeout(playNextMove, 500); // Wait 500ms before next move
             }
         } catch (err) {
-            console.error('Error during move:', err);
-            winnerText.textContent = 'Connection error. Please try again.';
-            winnerText.style.display = 'block';
-            isGameRunning = false;
-            startButton.disabled = false;
+            console.error('Network error during move, will retry:', err);
+            // Exponential backoff up to ~10s
+            moveRetryCount += 1;
+            const backoff = Math.min(10000, 500 * Math.pow(2, moveRetryCount - 1));
+            setTimeout(() => {
+                if (isGameRunning) playNextMove();
+            }, backoff);
         }
     }
 
