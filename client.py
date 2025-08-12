@@ -80,10 +80,17 @@ class OpenRouterClient:
             cost = 0
             # Print request cost
             try:
-                cost = completion.usage.cost
+                cost = completion.usage.cost or 0
+                try:
+                    upstream = (
+                        completion.usage.cost_details.upstream_inference_cost or 0
+                    )
+                    cost += upstream
+                except Exception:
+                    pass
                 log.debug(f"Request cost: {cost:.3f}€ | latency: {latency:.1f}s")
             except Exception as e:
-                log.error(f"Error getting upstream inference cost: {e}")
+                log.error(f"Error getting cost info: {e}")
 
             return {"completion": completion, "cost": cost, "latency": latency}
         except Exception as e:
