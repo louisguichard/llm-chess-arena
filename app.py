@@ -42,6 +42,7 @@ def index():
     for model_data in models:
         model_id = model_data["id"]
         display_name = model_data["name"] or model_id.split("/")[-1]
+        tags = model_data.get("tags", [])
         stats = ratings.get_stats(model_id)
         llms.append(
             {
@@ -49,6 +50,7 @@ def index():
                 "name": display_name,
                 "provider": model_id.split("/")[0] or "Unknown",
                 "elo": ratings.get(model_id),
+                "tags": tags,
             }
         )
 
@@ -69,13 +71,14 @@ def index():
             (stats["cost"] / stats["moves"]) if stats["moves"] > 0 else 0
         )
 
-        # Find the display name from the models list
+        # Find the display name and tags from the models list
         model_info = next((m for m in models if m["id"] == player_id), None)
         display_name = (
             model_info["name"]
             if model_info and model_info["name"]
             else player_id.split("/")[-1]
         )
+        tags = model_info.get("tags", []) if model_info else []
 
         leaderboard_data.append(
             {
@@ -91,6 +94,7 @@ def index():
                 "moves": stats["moves"],
                 "avgTimePerMove": avg_time_per_move,
                 "avgCostPerMove": avg_cost_per_move,
+                "tags": tags,
             }
         )
 

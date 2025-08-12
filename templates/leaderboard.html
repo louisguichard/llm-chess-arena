@@ -29,9 +29,24 @@
                                     <div class="w-10 h-10 mr-3 flex-shrink-0">
                                         {{ render_logo(llm.provider, 'h-10 w-10', 'text-lg') }}
                                     </div>
-                                    <div>
+                                    <div class="flex-grow">
                                         <p class="font-semibold text-gray-900 dark:text-gray-100">{{ llm.name }}</p>
-                                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ llm.provider }}</p>
+                                        <div class="flex items-center gap-2">
+                                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ llm.provider }}</p>
+                                            {% if llm.tags %}
+                                                <div class="flex gap-1">
+                                                    {% for tag in llm.tags %}
+                                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium 
+                                                            {% if tag == 'Expensive' %}bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300
+                                                            {% elif tag == 'Strong' %}bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300
+                                                            {% else %}bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300
+                                                            {% endif %}">
+                                                            {{ tag }}
+                                                        </span>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
                                     </div>
                                 </div>
                             </td>
