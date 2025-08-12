@@ -110,8 +110,12 @@ class ChessGame:
         else:
             self.terminate_game("1-0", f"Black resigned ({reason})")
 
-    def get_player_move(self, player, max_retries=2):
-        """Get a move from the specified player with retry logic."""
+    def get_player_move(self, player, max_retries=2, max_empty_retries=3):
+        """Get a move from the specified player with retry logic.
+
+        Empty responses do not count against max_retries, but are capped by
+        max_empty_retries to avoid infinite loops.
+        """
 
         # Add current board state to the conversation
         messages = (
@@ -119,21 +123,28 @@ class ChessGame:
         )
         messages.append({"role": "user", "content": build_user_prompt(self.board)})
 
-        for i in range(1 + max_retries):
+        attempts = 0
+        empty_attempts = 0
+
+        while attempts <= max_retries:
             # Ask the player for its move
             log.debug(
-                f"Attempt {i + 1}/{1 + max_retries}: Getting move from {player.name()}..."
+                f"Attempt {attempts + 1}/{1 + max_retries}: Getting move from {player.name()}..."
             )
             log.debug(
                 f"Prompt to {player.name()} (role=user):\n{messages[-1]['content']}"
             )
             response_data = player.chat(messages)
             log.debug(
-                f"Attempt {i + 1}/{1 + max_retries}: Received response for {player.name()}."
+                f"Attempt {attempts + 1}/{1 + max_retries}: Received response for {player.name()}."
             )
+
+            # Handle case where chat returns None (empty response, free retry)
             if not response_data:
-                # Handle case where chat returns None
                 error_reason = RetryReason.EMPTY_RESPONSE
+                empty_attempts += 1
+                if empty_attempts > max_empty_retries:
+                    return {"error": error_reason}
                 messages.append(
                     {
                         "role": "user",
@@ -158,6 +169,18 @@ class ChessGame:
                 log.warning(f"Completion: {completion}")
                 messages.append({"role": "assistant", "content": ""})
                 error_reason = RetryReason.EMPTY_RESPONSE
+                empty_attempts += 1
+                if empty_attempts > max_empty_retries:
+                    return {"error": error_reason}
+                messages.append(
+                    {
+                        "role": "user",
+                        "content": build_user_prompt(self.board)
+                        + "\n\n"
+                        + build_retry_message(error_reason),
+                    }
+                )
+                continue
 
             # Extract the move from the response
             result = self.extract_move_from_response(response)
@@ -183,6 +206,10 @@ class ChessGame:
                 error_reason = result["error"]
                 attempted = result.get("attempted")
             log.warning(f"⚠️ Error on this move: {error_reason}")
+
+            # Count this as a real attempt (non-empty response but invalid)
+            attempts += 1
+
             # Add error reason to the conversation
             messages.append(
                 {
