@@ -2,22 +2,17 @@
 
 {% block head %}
     <script>
-        const PIECE_UNICODE = {
-            'p': '♟︎', 'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚',
-            'P': '♙', 'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔',
-        };
-
         function showPage(page) {
             if (page === 'battle') {
                 document.getElementById('battle-page').style.display = 'block';
                 document.getElementById('leaderboard-page').style.display = 'none';
-                document.querySelector('[data-page="battle"]').classList.add('text-indigo-500');
-                document.querySelector('[data-page="leaderboard"]').classList.remove('text-indigo-500');
+                document.querySelector('[data-page="battle"]').classList.add('text-green-600');
+                document.querySelector('[data-page="leaderboard"]').classList.remove('text-green-600');
             } else {
                 document.getElementById('battle-page').style.display = 'none';
                 document.getElementById('leaderboard-page').style.display = 'block';
-                document.querySelector('[data-page="battle"]').classList.remove('text-indigo-500');
-                document.querySelector('[data-page="leaderboard"]').classList.add('text-indigo-500');
+                document.querySelector('[data-page="battle"]').classList.remove('text-green-600');
+                document.querySelector('[data-page="leaderboard"]').classList.add('text-green-600');
             }
         }
     </script>

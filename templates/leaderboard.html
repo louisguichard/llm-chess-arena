@@ -1,7 +1,7 @@
 {% from 'logos.html' import render_logo %}
 <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="flex items-center gap-3 mb-6">
-        <svg class="w-8 h-8 text-amber-500" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+        <svg class="w-8 h-8 text-green-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
         <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Leaderboard</h1>
     </div>
     <div class="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-700 shadow-sm overflow-hidden">
@@ -29,15 +29,16 @@
                                         {{ render_logo(llm.provider, 'h-10 w-10', 'text-lg') }}
                                     </div>
                                     <div class="flex-grow">
-                                        <p class="font-semibold text-gray-900 dark:text-gray-100">{{ llm.name }}</p>
+                                        <p class="font-semibold text-black dark:text-gray-100">{{ llm.name }}</p>
                                         <div class="flex items-center gap-2">
                                             <p class="text-sm text-gray-500 dark:text-gray-400">{{ llm.provider }}</p>
                                             {% if llm.tags %}
                                                 <div class="flex gap-1">
                                                     {% for tag in llm.tags %}
                                                         <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium 
-                                                            {% if tag == 'Expensive' %}bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300
-                                                            {% elif tag == 'Strong' %}bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300
+                                                            {% if tag == 'Open-source' %}bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300
+                                                            {% elif tag == 'Expensive' %}bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300
+                                                            {% elif tag == 'Strong' %}bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300
                                                             {% else %}bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300
                                                             {% endif %}">
                                                             {{ tag }}

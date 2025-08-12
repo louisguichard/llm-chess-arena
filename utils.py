@@ -26,29 +26,24 @@ def read_models_from_file(path):
                 display_name = None
                 tags = []
 
+                # Look for tags first (they are enclosed in brackets)
+                if "[" in line and "]" in line:
+                    # Find the tag section
+                    tag_start = line.rfind("[")
+                    tag_end = line.rfind("]")
+                    if tag_start < tag_end:
+                        tag_part = line[tag_start : tag_end + 1]
+                        tag_content = tag_part[1:-1]  # Remove brackets
+                        if tag_content:
+                            tags = [tag.strip() for tag in tag_content.split(",")]
+                        # Remove the tag part from the line for further processing
+                        line = line[:tag_start].strip().rstrip(",").strip()
+
                 if "," in line:
-                    # Split by comma but be careful about tags
-                    parts = line.split(",")
+                    # Split by comma
+                    parts = line.split(",", 1)  # Split only on first comma
                     model_id = parts[0].strip()
-
-                    # Check if there are tags (enclosed in brackets)
-                    if len(parts) >= 3 and "[" in parts[-1] and "]" in parts[-1]:
-                        # Last part contains tags
-                        tag_part = parts[-1].strip()
-                        if tag_part.startswith("[") and tag_part.endswith("]"):
-                            # Parse tags from [tag1,tag2,...]
-                            tag_content = tag_part[1:-1]  # Remove brackets
-                            if tag_content:
-                                tags = [tag.strip() for tag in tag_content.split(",")]
-
-                        # Everything between first and last comma is display name
-                        if len(parts) >= 3:
-                            display_name = ",".join(parts[1:-1]).strip()
-                        else:
-                            display_name = parts[1].strip()
-                    else:
-                        # No tags, just display name
-                        display_name = ",".join(parts[1:]).strip()
+                    display_name = parts[1].strip() if len(parts) > 1 else None
                 else:
                     model_id = line
 

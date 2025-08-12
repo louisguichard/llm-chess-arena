@@ -3,3 +3,4 @@ __pycache__
 games/
 ratings.json
 TODOLIST.md
+.DS_Store

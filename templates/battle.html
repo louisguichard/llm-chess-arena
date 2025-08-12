@@ -8,7 +8,10 @@
             <div class="flex items-center w-full">
                 <div class="player-avatar bg-gray-200 dark:bg-zinc-800 border-2 border-dashed border-gray-300 dark:border-zinc-700 rounded-full w-12 h-12 mr-4 flex-shrink-0 flex items-center justify-center"></div>
                 <div class="flex-grow">
-                    <h3 class="player-name font-bold text-lg text-gray-500 dark:text-gray-400">Select Player</h3>
+                    <div class="flex items-center gap-2.5">
+                        <h3 class="player-name font-bold text-lg text-gray-900 dark:text-gray-100">Select Player</h3>
+                        <span class="inline-block w-3.5 h-3.5 rounded-full border {{ 'bg-white border-gray-300 dark:border-zinc-400' if color == 'white' else 'bg-black border-gray-700 dark:border-zinc-600' }}" title="{{ 'White' if color == 'white' else 'Black' }}"></span>
+                    </div>
                     <p class="player-info text-sm text-gray-500 dark:text-gray-400">Click to choose an LLM</p>
                 </div>
             </div>
@@ -16,18 +19,19 @@
         </button>
         <ul class="player-selector-list hidden absolute z-10 mt-2 w-full bg-white dark:bg-zinc-800 shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
             {% for llm in llms %}
-                <li data-llm-id="{{ llm.id }}" data-llm-name="{{ llm.name }}" data-llm-provider="{{ llm.provider }}" data-llm-elo="{{ llm.elo | round | int }}" class="llm-option cursor-pointer select-none relative py-2 pl-3 pr-9 text-gray-900 dark:text-gray-100 hover:bg-indigo-600 hover:text-white">
+                <li data-llm-id="{{ llm.id }}" data-llm-name="{{ llm.name }}" data-llm-provider="{{ llm.provider }}" data-llm-elo="{{ llm.elo | round | int }}" class="llm-option cursor-pointer select-none relative py-2 pl-3 pr-9 text-black dark:text-gray-100 hover:bg-indigo-600 hover:text-white">
                     <span class="flex items-center justify-between w-full">
                         <div class="flex items-center">
                             <div class="w-6 h-6 mr-2 flex-shrink-0">{{ render_logo(llm.provider, 'h-6 w-6', 'text-sm') }}</div>
-                            <span class="font-normal block truncate">{{ llm.name }}</span>
+                            <span class="font-normal block truncate text-black dark:text-gray-100">{{ llm.name }}</span>
                         </div>
                         {% if llm.tags %}
                             <div class="flex gap-1 ml-2">
                                 {% for tag in llm.tags %}
                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium 
-                                        {% if tag == 'Expensive' %}bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300
-                                        {% elif tag == 'Strong' %}bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300
+                                        {% if tag == 'Open-source' %}bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300
+                                        {% elif tag == 'Expensive' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300
+                                        {% elif tag == 'Strong' %}bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300
                                         {% else %}bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300
                                         {% endif %}">
                                         {{ tag }}
@@ -70,7 +74,7 @@
             {% for piece in row %}
                 {% set col_index = loop.index0 %}
                 {% set is_light = (row_index + col_index) % 2 != 0 %}
-                <div class="flex items-center justify-center {{ 'bg-gray-200 dark:bg-zinc-600' if is_light else 'bg-green-700/80 dark:bg-green-900/80' }}">
+                <div class="flex items-center justify-center {{ 'bg-white dark:bg-zinc-300' if is_light else 'bg-green-600/80 dark:bg-green-500/60' }}">
                     {% set piece_class = '' %}
                     {% if piece %}
                         {% if piece|lower == piece %}
@@ -79,9 +83,14 @@
                             {% set piece_class = 'piece-white' %}
                         {% endif %}
                     {% endif %}
-                    <span class="piece {{ piece_class }} text-xl sm:text-3xl md:text-4xl select-none">
-                        <script>document.write(PIECE_UNICODE['{{ piece }}'] || '')</script>
-                    </span>
+                    {% if piece %}
+                        {% set color_code = 'w' if piece == piece|upper else 'b' %}
+                        {% set type_code = piece|lower %}
+                        <img class="piece-img w-7 sm:w-12 md:w-14 h-auto select-none" src="{{ url_for('static', filename='pieces/' ~ color_code ~ type_code ~ '.svg') }}?v=2" alt="" />
+                    {% else %}
+                        <img class="piece-img w-7 sm:w-12 md:w-14 h-auto select-none" alt="" />
+                    {% endif %}
+                    <span class="piece {{ piece_class }} text-xl sm:text-3xl md:text-4xl select-none"></span>
                 </div>
             {% endfor %}
         {% endfor %}
@@ -100,7 +109,7 @@
                     {{ chessboard(initial_board) }}
                 </div>
                 <div class="text-center">
-                    <button id="start-battle-btn" type="submit" class="w-auto flex items-center justify-center gap-2 bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 disabled:bg-blue-900/50 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors">
+                    <button id="start-battle-btn" type="submit" class="w-auto flex items-center justify-center gap-2 bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 disabled:bg-green-900/50 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors">
                         <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
                         <span>Start Battle</span>
                     </button>

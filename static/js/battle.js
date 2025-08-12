@@ -114,11 +114,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function highlightCurrentPlayer() {
         if (turn === 'white') {
-            document.getElementById('white-panel').classList.add('ring-2', 'ring-indigo-500', 'shadow-lg');
-            document.getElementById('black-panel').classList.remove('ring-2', 'ring-indigo-500', 'shadow-lg');
+            document.getElementById('white-panel').classList.add('ring-2', 'ring-green-500', 'shadow-lg');
+            document.getElementById('black-panel').classList.remove('ring-2', 'ring-green-500', 'shadow-lg');
         } else {
-            document.getElementById('black-panel').classList.add('ring-2', 'ring-indigo-500', 'shadow-lg');
-            document.getElementById('white-panel').classList.remove('ring-2', 'ring-indigo-500', 'shadow-lg');
+            document.getElementById('black-panel').classList.add('ring-2', 'ring-green-500', 'shadow-lg');
+            document.getElementById('white-panel').classList.remove('ring-2', 'ring-green-500', 'shadow-lg');
         }
     }
 
@@ -197,17 +197,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const board = fenToBoard(fen);
         const chessboard = document.getElementById('chessboard');
         const squares = chessboard.querySelectorAll('.flex.items-center.justify-center');
-        
+
         board.flat().forEach((piece, index) => {
-            const pieceSpan = squares[index].querySelector('span.piece');
-            pieceSpan.textContent = PIECE_UNICODE[piece] || '';
-            pieceSpan.classList.remove('piece-black', 'piece-white');
+            const pieceImg = squares[index].querySelector('img.piece-img');
+            if (!pieceImg) return;
             if (piece) {
-                if (piece === piece.toLowerCase()) {
-                    pieceSpan.classList.add('piece-black');
-                } else {
-                    pieceSpan.classList.add('piece-white');
-                }
+                const colorCode = piece === piece.toUpperCase() ? 'w' : 'b';
+                const typeCode = piece.toLowerCase();
+                pieceImg.src = `/static/pieces/${colorCode}${typeCode}.svg?v=2`;
+            } else {
+                pieceImg.removeAttribute('src');
             }
         });
     }
@@ -254,4 +253,5 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     setupPlayerPanels();
+    initBoardAssets();
 });
