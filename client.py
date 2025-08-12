@@ -47,17 +47,21 @@ class OpenRouterClient:
                         "schema": {
                             "type": "object",
                             "properties": {
+                                "reasoning": {
+                                    "type": "string",
+                                    "description": "First, think step-by-step about the position and document your thoughts here. This is your internal monologue.",
+                                },
                                 "rationale": {
                                     "type": "string",
-                                    "description": "Reasoning for your move",
+                                    "description": "Second, summarize your thinking in a short, one or two-sentence explanation for your final move choice.",
                                 },
                                 "move": {
                                     "type": "string",
-                                    "description": "Exactly one move in UCI like 'e2e4' (or 'resign' if checkmated, 'pass' if stalemate)",
+                                    "description": "Third, return exactly one move in UCI format from the list of legal moves.",
                                     "pattern": "^(?:[a-h][1-8][a-h][1-8][qrbn]?|resign|pass)$",
                                 },
                             },
-                            "required": ["rationale", "move"],
+                            "required": ["reasoning", "rationale", "move"],
                             "additionalProperties": False,
                         },
                     },

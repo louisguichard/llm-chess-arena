@@ -53,12 +53,11 @@ class ChessGame:
         """Extract the move from the response.
 
         Returns:
-            dict: Either {"move": chess.Move or "resign", "rationale": string} for success
+            dict: Either {"move": chess.Move or "resign", "rationale": string, "reasoning": string} for success
                 or {"error": RetryReason} for failure
         """
         if not response:
             return {"error": RetryReason.EMPTY_RESPONSE}
-        # TODO: empty response could not be counted in the retry logic
 
         try:
             parsed_response = json.loads(response.strip())
@@ -66,6 +65,12 @@ class ChessGame:
             log.warning(f"Error parsing JSON: {response}")
             return {"error": RetryReason.INVALID_JSON}
 
+        if "reasoning" not in parsed_response:
+            log.warning(f"Missing 'reasoning' key in response: {parsed_response}")
+            return {"error": RetryReason.MISSING_REASONING_KEY}
+        if "rationale" not in parsed_response:
+            log.warning(f"Missing 'rationale' key in response: {parsed_response}")
+            return {"error": RetryReason.MISSING_RATIONALE_KEY}
         if "move" not in parsed_response:
             log.warning(f"Missing 'move' key in response: {parsed_response}")
             return {"error": RetryReason.MISSING_MOVE_KEY}
@@ -73,12 +78,18 @@ class ChessGame:
         try:
             move_str = parsed_response["move"].strip()
             rationale = parsed_response.get("rationale", "No rationale provided.")
+            reasoning = parsed_response.get("reasoning", "No reasoning provided.")
             if move_str == "resign" or move_str == "pass":
-                return {"move": move_str, "rationale": rationale}
+                return {
+                    "move": move_str,
+                    "rationale": rationale,
+                    "reasoning": reasoning,
+                }
             return {
                 "move": chess.Move.from_uci(move_str),
                 "move_uci": move_str,
                 "rationale": rationale,
+                "reasoning": reasoning,
             }
         except ValueError:
             log.warning(f"Error parsing UCI move: {move_str}")
@@ -158,6 +169,7 @@ class ChessGame:
                     return {
                         "move": move,
                         "rationale": result.get("rationale"),
+                        "reasoning": result.get("reasoning"),
                         "cost": cost,
                         "latency": latency,
                     }
@@ -250,6 +262,7 @@ class ChessGame:
         # Extract all data from the result
         move = result["move"]
         rationale = result.get("rationale", "No rationale provided.")
+        reasoning = result.get("reasoning", "No reasoning provided.")
         cost = result.get("cost", 0)
         latency = result.get("latency", 0)
 
@@ -279,6 +292,7 @@ class ChessGame:
                 "is_over": True,
                 "result": self.game.headers.get("Result"),
                 "rationale": rationale,
+                "reasoning": reasoning,
                 "cost": cost,
                 "latency": latency,
             }
@@ -301,6 +315,7 @@ class ChessGame:
             "is_over": self.is_over,
             "result": self.game.headers.get("Result"),
             "rationale": rationale,
+            "reasoning": reasoning,
             "cost": cost,
             "latency": latency,
         }

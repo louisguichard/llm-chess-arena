@@ -11,10 +11,10 @@ class RetryReason(Enum):
         "Your response was empty. Return ONLY one JSON object matching the schema."
     )
     INVALID_JSON = "Your output was not valid JSON or contained extra text. Return ONLY one JSON object matching the schema (no code fences, no extra text)."
-    ILLEGAL_MOVE = (
-        "Your move is illegal in the current position. Return a legal UCI move."
-    )
-    MISSING_MOVE_KEY = "Your JSON is missing the required 'move' key. Return EXACTLY one JSON object with keys 'rationale' and 'move'."
+    ILLEGAL_MOVE = "Your move is illegal in the current position. Make sure you are generating a valid move."
+    MISSING_MOVE_KEY = "Your JSON is missing the required 'move' key."
+    MISSING_RATIONALE_KEY = "Your JSON is missing the required 'rationale' key."
+    MISSING_REASONING_KEY = "Your JSON is missing the required 'reasoning' key."
     INVALID_UCI_FORMAT = "The 'move' value is not valid UCI. It must match ^[a-h][1-8][a-h][1-8][qrbn]?$."
 
 
@@ -66,21 +66,27 @@ def last_uci_from_board(board):
         return "-"
 
 
-SYSTEM_PROMPT = """You are a professional chess player in a turn-based chat.
+SYSTEM_PROMPT = """You are a professional chess player. Your goal is to win the game by making the best possible moves.
 
-Return exactly ONE move to PLAY now, as a SINGLE JSON object:
+Follow these steps to decide on your move:
+1.  **Analyze the board**: Review the current game state, threats, and opportunities.
+2.  **Think step-by-step**: Use the `reasoning` field to explain your thought process. Document your analysis, candidate moves, and why you are choosing your final move. Double-check that your chosen move in the `move` field is legal in the current board position. This is your internal monologue and should be detailed.
+3.  **Summarize your rationale**: In the `rationale` field, provide a brief, one or two-sentence summary of your reason for the move. This will be shown in the UI.
+
+Return your final decision as a SINGLE JSON object with three keys, in this exact order: `reasoning`, `rationale`, `move`.
+
+Example response (reasoning could be a lot longer):
 {
-  "rationale": string,  // explain your move
-  "move": string        // one legal UCI move, e.g. "e2e4","e7e8q"
+  "reasoning": "The opponent's last move, Nf6, develops a piece and controls the center. My main options are to challenge the center with d4, develop my own knight with Nc3, or make a quieter move like g3. Pushing the d-pawn seems most aggressive and best. It will attack the center and open lines for my pieces. I've double-checked, and d2d4 is a legal move.",
+  "rationale": "I'm pushing my d-pawn to challenge the opponent's control of the center and open up lines for my other pieces.",
+  "move": "d2d4"
 }
 
 Hard rules:
-- Output ONLY the JSON object. No code fences, no text before/after.
-- "move" MUST match ^[a-h][1-8][a-h][1-8][qrbn]?$ and MUST be LEGAL in the latest Turn Context.
-- Make sure that the move you are proposing is legal.
-- Promotion: use "q" unless another promotion is clearly better and legal.
-- If checkmated: {"rationale":"…","move":"resign"}
-- If stalemate:  {"rationale":"…","move":"pass"}"""
+- Output ONLY the JSON object. No code fences, no text before or after the JSON.
+- The `move` MUST be a legal move in the current position.
+- If you are checkmated: `{"reasoning": "...", "rationale": "...", "move": "resign"}`
+- If the game is a stalemate: `{"reasoning": "...", "rationale": "...", "move": "pass"}`"""
 
 
 def build_user_prompt(board):
@@ -127,7 +133,7 @@ def build_user_prompt(board):
         f"White pieces: {white_pieces_str}\n"
         f"Black pieces: {black_pieces_str}\n"
         f"ASCII board (ranks 8→1, files a→h):\n{ascii_board_str}\n\n"
-        "Task: choose ONE legal move now and return ONLY the JSON per the schema."
+        "Task: Choose ONE legal move and return ONLY the JSON, per the system prompt."
     )
 
 
@@ -142,13 +148,13 @@ def build_retry_message(reason, attempted=None):
     if reason == RetryReason.ILLEGAL_MOVE:
         if attempted:
             return (
-                f"The move '{attempted}' you made is illegal and cannot be played. "
-                f"Please respond with a move that is legal and in the UCI chess format "
-                f"(e.g., 'e2e4', 'e7e8q'). Return ONLY the JSON object."
+                f"The move '{attempted}' is illegal and cannot be played in the current position. "
+                "Please analyze the board again and provide a legal move in UCI format. "
+                "Return ONLY the JSON object."
             )
         return (
-            "Your move is illegal in the current position. Please respond with a legal "
-            "UCI move (e.g., 'e2e4', 'e7e8q'). Return ONLY the JSON object."
+            "Your previous move was illegal. Please choose a legal move and return it "
+            "in the JSON format."
         )
 
     if reason == RetryReason.INVALID_UCI_FORMAT:
@@ -167,14 +173,17 @@ def build_retry_message(reason, attempted=None):
     if reason == RetryReason.INVALID_JSON:
         return (
             "Your output was not valid JSON or contained extra text. Return ONLY a single JSON object "
-            "with keys 'rationale' and 'move' (no code fences, no text before/after)."
+            "with keys 'reasoning', 'rationale' and 'move' (no code fences, no text before/after)."
         )
 
     if reason == RetryReason.MISSING_MOVE_KEY:
-        return (
-            "Your JSON is missing the required 'move' key. Return EXACTLY one JSON object with keys "
-            "'rationale' and 'move'."
-        )
+        return "Your JSON is missing the required 'move' key. Return a JSON object with 'reasoning', 'rationale', and 'move' keys."
+
+    if reason == RetryReason.MISSING_RATIONALE_KEY:
+        return "Your JSON is missing the required 'rationale' key. Return a JSON object with 'reasoning', 'rationale', and 'move' keys."
+
+    if reason == RetryReason.MISSING_REASONING_KEY:
+        return "Your JSON is missing the required 'reasoning' key. Return a JSON object with 'reasoning', 'rationale', and 'move' keys."
 
     if reason == RetryReason.EMPTY_RESPONSE:
         return "Your response was empty. Return ONLY a single JSON object matching the schema (no extra text)."
