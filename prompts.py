@@ -172,16 +172,30 @@ def build_retry_message(reason, attempted=None):
 
     if reason == RetryReason.INVALID_UCI_FORMAT:
         if attempted:
-            return (
-                f"The move '{attempted}' is not valid UCI. It must match {pattern}. "
-                "Use lowercase files and ranks; include a promotion piece 'q','r','b','n' when promoting "
-                "(prefer 'q' unless clearly better). Examples: 'e2e4', 'e7e8q'. "
-                "Return ONLY the JSON object."
-            )
-        return (
-            f"The 'move' value is not valid UCI. It must match {pattern}. "
-            "Examples: 'e2e4', 'e7e8q'. Return ONLY the JSON object."
-        )
+            return f"""The move '{attempted}' is not valid UCI. It must match {pattern}. UCI is from-square + to-square (+ optional promotion piece). Do NOT include 'x', '+', '-' or piece letters. For captures, just write the to-square.
+
+Bad examples and corrections:
+- 'd4xe5' -> 'd4e5'
+- 'Nf3' -> 'g1f3'
+- 'Nb8d7' -> 'b8d7'
+- 'e2-e4' -> 'e2e4'
+
+Valid examples:
+- 'e2e4', 'd4e5', 'g1f3', 'c1g5', 'e7e8q' (promotion).
+
+Return ONLY the JSON object."""
+        return f"""The 'move' value is not valid UCI. It must match {pattern}. UCI is from-square + to-square (+ optional promotion piece). Do NOT include 'x', '+', '-' or piece letters. For captures, just write the to-square.
+
+Bad examples and corrections:
+- 'd4xe5' -> 'd4e5'
+- 'Nf3' -> 'g1f3'
+- 'Nb8d7' -> 'b8d7'
+- 'e2-e4' -> 'e2e4'
+
+Valid examples:
+- 'e2e4', 'd4e5', 'g1f3', 'c1g5', 'e7e8q' (promotion).
+
+Return ONLY the JSON object."""
 
     if reason == RetryReason.INVALID_JSON:
         return """Your output was not valid JSON or contained extra text. Return ONLY one JSON object that starts with '{' and ends with '}', with absolutely no text before or after it. The JSON must have keys in this exact order: 'reasoning', 'rationale', 'move'. Do not use code fences or text before or after the JSON.
