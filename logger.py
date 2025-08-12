@@ -11,7 +11,7 @@ load_dotenv()
 def setup_logger():
     """Set up the logger."""
     logger = logging.getLogger("llm-chess-arena")
-    if os.getenv("ENV") == "locala":
+    if os.getenv("ENV") == "local":
         logging.basicConfig(level=logging.DEBUG)
     else:
         try:
