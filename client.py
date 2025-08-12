@@ -35,9 +35,16 @@ class OpenRouterClient:
     def chat(self, messages):
         try:
             start = time.time()
-            log.debug(f"Sending request to {self.model}...")
+            extra_body = {"usage": {"include": True}}
+            if self.model == "openai/gpt-5-high":
+                model_to_call = "openai/gpt-5"
+                # Add high reasoning effort
+                extra_body["reasoning"] = {"effort": "high"}
+            else:
+                model_to_call = self.model
+            log.debug(f"Sending request to {model_to_call}...")
             completion = self.client.chat.completions.create(
-                model=self.model,
+                model=model_to_call,
                 messages=messages,
                 response_format={
                     "type": "json_schema",
@@ -66,7 +73,7 @@ class OpenRouterClient:
                         },
                     },
                 },
-                extra_body={"usage": {"include": True}},
+                extra_body=extra_body,
             )
             log.debug(f"Received response from {self.model}.")
             latency = time.time() - start
