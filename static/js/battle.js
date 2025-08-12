@@ -201,6 +201,14 @@ document.addEventListener('DOMContentLoaded', () => {
         board.flat().forEach((piece, index) => {
             const pieceSpan = squares[index].querySelector('span.piece');
             pieceSpan.textContent = PIECE_UNICODE[piece] || '';
+            pieceSpan.classList.remove('piece-black', 'piece-white');
+            if (piece) {
+                if (piece === piece.toLowerCase()) {
+                    pieceSpan.classList.add('piece-black');
+                } else {
+                    pieceSpan.classList.add('piece-white');
+                }
+            }
         });
     }
 

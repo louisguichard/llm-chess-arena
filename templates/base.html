@@ -17,6 +17,11 @@
             document.documentElement.classList.add('dark');
         }
     </script>
+    <style>
+        /* Ensure chess pieces keep their intended colors in dark mode */
+        .dark .piece-black { color: #111; }
+        .dark .piece-white { color: #fff; text-shadow: 0 0 1px #000; }
+    </style>
     {% block head %}{% endblock %}
 </head>
 <body class="bg-gray-100 dark:bg-zinc-950 text-gray-900 dark:text-gray-100 font-sans">

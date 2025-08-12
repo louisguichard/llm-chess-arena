@@ -71,7 +71,15 @@
                 {% set col_index = loop.index0 %}
                 {% set is_light = (row_index + col_index) % 2 != 0 %}
                 <div class="flex items-center justify-center {{ 'bg-gray-200 dark:bg-zinc-600' if is_light else 'bg-green-700/80 dark:bg-green-900/80' }}">
-                    <span class="piece text-xl sm:text-3xl md:text-4xl select-none">
+                    {% set piece_class = '' %}
+                    {% if piece %}
+                        {% if piece|lower == piece %}
+                            {% set piece_class = 'piece-black' %}
+                        {% else %}
+                            {% set piece_class = 'piece-white' %}
+                        {% endif %}
+                    {% endif %}
+                    <span class="piece {{ piece_class }} text-xl sm:text-3xl md:text-4xl select-none">
                         <script>document.write(PIECE_UNICODE['{{ piece }}'] || '')</script>
                     </span>
                 </div>
