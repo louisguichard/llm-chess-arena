@@ -127,6 +127,11 @@ class RatingsTable:
         - white_time, black_time: total time spent by each player (seconds)
         - white_cost, black_cost: total cost incurred by each player (dollars)
         """
+        # Ignore very short games (aborted/opening glitches)
+        total_plies = (white_moves or 0) + (black_moves or 0)
+        if total_plies <= 1:
+            return
+
         # Ensure players exist in ratings
         if white_id not in self.ratings:
             self.set(white_id, self.default_rating)
