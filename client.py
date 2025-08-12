@@ -81,8 +81,8 @@ class OpenRouterClient:
             # Log request cost
             try:
                 cost = completion.usage.cost or 0
-                upstream = completion.usage.cost_details.get(
-                    "upstream_inference_cost", 0
+                upstream = (
+                    completion.usage.cost_details.get("upstream_inference_cost") or 0
                 )
                 cost += upstream
                 log.debug(
