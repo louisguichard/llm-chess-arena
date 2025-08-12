@@ -1,23 +1,23 @@
 # One model id per line
 
-google/gemini-2.5-pro
-google/gemini-2.5-flash
-google/gemini-2.5-flash-lite
-google/gemma-3-27b-it
-x-ai/grok-4
-x-ai/grok-3
+google/gemini-2.5-pro, Gemini 2.5 Pro
+google/gemini-2.5-flash, Gemini 2.5 Flash
+google/gemini-2.5-flash-lite, Gemini 2.5 Flash Lite
+google/gemma-3-27b-it, Gemma 3 27B
+x-ai/grok-4, Grok 4
+x-ai/grok-3, Grok 3
 # TODO: add openai/o3 and openai/gpt-5 (require OpenAI API key)
-openai/gpt-4o
-openai/gpt-oss-120b
-openai/gpt-oss-20b
-anthropic/claude-opus-4.1
-anthropic/claude-sonnet-4
-deepseek/deepseek-r1:free
-deepseek/deepseek-chat-v3-0324:free
-qwen/qwen3-30b-a3b
-qwen/qwen3-235b-a22b:free
-qwen/qwen3-235b-a22b-thinking-2507
-moonshotai/kimi-k2:free
-meta-llama/llama-4-maverick
-mistralai/mixtral-8x7b-instruct
-mistralai/mistral-medium-3
+openai/gpt-4o, GPT-4o
+openai/gpt-oss-120b, GPT-OSS 120B
+openai/gpt-oss-20b, GPT-OSS 20B
+anthropic/claude-opus-4.1, Claude Opus 4.1
+anthropic/claude-sonnet-4, Claude Sonnet 4
+deepseek/deepseek-r1:free, DeepSeek R1
+deepseek/deepseek-chat-v3-0324:free, DeepSeek V3
+qwen/qwen3-30b-a3b, Qwen3 30B
+qwen/qwen3-235b-a22b:free, Qwen3 235B
+qwen/qwen3-235b-a22b-thinking-2507, Qwen3 235B Thinking
+moonshotai/kimi-k2:free, Kimi K2
+meta-llama/llama-4-maverick, Llama 4 Maverick
+mistralai/mixtral-8x7b-instruct, Mixtral 8x7B Instruct
+mistralai/mistral-medium-3, Mistral Medium 3

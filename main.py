@@ -18,13 +18,16 @@ def run_tournament(models, total_matches):
 
     # Initialize ratings table
     ratings = RatingsTable()
-    for model in models:
-        if model not in ratings.ratings:
-            ratings.set(model, 1200)  # default rating
+    for model_data in models:
+        model_id = model_data["id"]
+        if model_id not in ratings.ratings:
+            ratings.set(model_id, 1200)  # default rating
+
+    model_ids = [m["id"] for m in models]
 
     for i in range(total_matches):
         # Randomly select two models
-        white_model, black_model = random.sample(models, 2)
+        white_model, black_model = random.sample(model_ids, 2)
         print(f"\nGame n°{i + 1}: {white_model} (White) vs {black_model} (Black)")
 
         # Create clients

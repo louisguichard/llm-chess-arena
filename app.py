@@ -39,12 +39,14 @@ def index():
 
     # Prepare data for battle page
     llms = []
-    for model_id in models:
+    for model_data in models:
+        model_id = model_data["id"]
+        display_name = model_data["name"] or model_id.split("/")[-1]
         stats = ratings.get_stats(model_id)
         llms.append(
             {
                 "id": model_id,
-                "name": model_id.split("/")[1] or model_id,
+                "name": display_name,
                 "provider": model_id.split("/")[0] or "Unknown",
                 "elo": ratings.get(model_id),
             }
@@ -67,10 +69,18 @@ def index():
             (stats["cost"] / stats["moves"]) if stats["moves"] > 0 else 0
         )
 
+        # Find the display name from the models list
+        model_info = next((m for m in models if m["id"] == player_id), None)
+        display_name = (
+            model_info["name"]
+            if model_info and model_info["name"]
+            else player_id.split("/")[-1]
+        )
+
         leaderboard_data.append(
             {
                 "id": player_id,
-                "name": player_id.split("/")[1] or player_id,
+                "name": display_name,
                 "provider": player_id.split("/")[0] or "Unknown",
                 "elo": data["rating"],
                 "matchesPlayed": total_games,
