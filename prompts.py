@@ -150,7 +150,7 @@ def build_user_prompt(board):
     )
 
 
-def build_retry_message(reason, attempted=None):
+def build_retry_message(reason, attempted=None, is_in_check=None):
     """Return a detailed retry instruction for the assistant.
 
     The returned string is meant to be appended as a new user message to
@@ -159,14 +159,17 @@ def build_retry_message(reason, attempted=None):
     pattern = "^[a-h][1-8][a-h][1-8][qrbn]?$"
 
     if reason == RetryReason.ILLEGAL_MOVE:
+        check_message = ""
+        if is_in_check:
+            check_message = " Your king is currently in check. You must make a move to resolve the check."
         if attempted:
             return (
-                f"The move '{attempted}' is illegal and cannot be played in the current position. "
+                f"The move '{attempted}' is illegal and cannot be played in the current position.{check_message} "
                 "Please analyze the board again and provide a legal move in UCI format. "
                 "Return ONLY the JSON object."
             )
         return (
-            "Your previous move was illegal. Please choose a legal move and return it "
+            f"Your previous move was illegal.{check_message} Please choose a legal move and return it "
             "in the JSON format."
         )
 

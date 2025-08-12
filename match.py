@@ -226,7 +226,9 @@ class ChessGame:
                     "role": "user",
                     "content": build_user_prompt(self.board)
                     + "\n\n"
-                    + build_retry_message(error_reason, attempted),
+                    + build_retry_message(
+                        error_reason, attempted, is_in_check=self.board.is_check()
+                    ),
                 }
             )
 
