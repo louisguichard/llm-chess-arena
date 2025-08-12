@@ -157,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     playerName.textContent = option.dataset.llmName;
                     playerInfo.textContent = `${option.dataset.llmProvider} | ${option.dataset.llmElo} ELO`;
                     
-                    playerAvatar.innerHTML = `<div class="w-full h-full bg-gray-600 rounded-full flex items-center justify-center text-white font-bold text-lg">${option.dataset.llmProvider.charAt(0).toUpperCase()}</div>`;
+                    playerAvatar.innerHTML = option.querySelector('svg').outerHTML;
                     playerAvatar.classList.remove('bg-gray-200', 'dark:bg-zinc-800', 'border-2', 'border-dashed', 'border-gray-300', 'dark:border-zinc-700');
 
                     selectorList.classList.add('hidden');

@@ -1,10 +1,12 @@
+{% from 'logos.html' import render_logo %}
+
 {% macro player_panel(color, llms) %}
 <div id="{{ color }}-panel" class="player-panel bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-4 md:p-6 flex flex-col h-full transition-all duration-300">
     <input type="hidden" name="{{ color }}_player" class="player-input">
     <div class="relative mb-4">
         <button type="button" class="player-selector-button w-full flex items-center text-left p-2 -m-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-zinc-800/80 disabled:cursor-not-allowed disabled:hover:bg-transparent">
             <div class="flex items-center w-full">
-                <div class="player-avatar bg-gray-200 dark:bg-zinc-800 border-2 border-dashed border-gray-300 dark:border-zinc-700 rounded-full w-12 h-12 mr-4 flex-shrink-0"></div>
+                <div class="player-avatar bg-gray-200 dark:bg-zinc-800 border-2 border-dashed border-gray-300 dark:border-zinc-700 rounded-full w-12 h-12 mr-4 flex-shrink-0 flex items-center justify-center"></div>
                 <div class="flex-grow">
                     <h3 class="player-name font-bold text-lg text-gray-500 dark:text-gray-400">Select Player</h3>
                     <p class="player-info text-sm text-gray-500 dark:text-gray-400">Click to choose an LLM</p>
@@ -16,7 +18,7 @@
             {% for llm in llms %}
                 <li data-llm-id="{{ llm.id }}" data-llm-name="{{ llm.name }}" data-llm-provider="{{ llm.provider }}" data-llm-elo="{{ llm.elo | round | int }}" class="llm-option cursor-pointer select-none relative py-2 pl-3 pr-9 text-gray-900 dark:text-gray-100 hover:bg-indigo-600 hover:text-white">
                     <span class="flex items-center">
-                        <div class="w-6 h-6 mr-2 flex-shrink-0"><div class="w-full h-full bg-gray-600 rounded-full flex items-center justify-center text-white font-bold text-sm">{{ llm.provider[0] | upper }}</div></div>
+                        <div class="w-6 h-6 mr-2 flex-shrink-0">{{ render_logo(llm.provider, 'h-6 w-6', 'text-sm') }}</div>
                         <span class="font-normal block truncate">{{ llm.name }}</span>
                     </span>
                 </li>
