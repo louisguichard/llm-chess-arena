@@ -253,5 +253,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     setupPlayerPanels();
-    initBoardAssets();
 });
