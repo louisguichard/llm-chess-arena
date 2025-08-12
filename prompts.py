@@ -57,9 +57,9 @@ def board_to_ascii(board):
 
 
 def last_uci_from_board(board):
-    """Return the last UCI move or '-' if no moves were played yet."""
+    """Return the last UCI move."""
     if not board.move_stack:
-        return "-"
+        return "(no move yet, game is just starting)"
     try:
         return board.move_stack[-1].uci()
     except Exception:
