@@ -12,7 +12,7 @@ from prompts import (
     RetryReason,
     build_retry_message,
 )
-from gcp import write_file_to_gcs
+from gcp import write_file_to_gcs, write_json_to_gcs
 from logger import log
 
 
@@ -42,6 +42,9 @@ class ChessGame:
         self.white_messages = [{"role": "system", "content": SYSTEM_PROMPT}]
         self.black_messages = [{"role": "system", "content": SYSTEM_PROMPT}]
         self.is_over = False
+
+        # Game data to be saved as JSON
+        self.moves_log = []
 
         # Track game statistics
         self.white_time = 0.0
@@ -213,18 +216,42 @@ class ChessGame:
             self.game.headers["Result"] = "1/2-1/2"
             self.game.headers["Termination"] = "exceeded moves limit"
 
-    def save_pgn(self):
-        """Save the game to a PGN file."""
+    def save_game(self):
+        """Save game to PGN and JSON."""
+        timestamp = time.time_ns()
+        safe_white = self.white_player.name().replace("/", "-")
+        safe_black = self.black_player.name().replace("/", "-")
+        base_filename = f"{timestamp}_{safe_white}_vs_{safe_black}"
+
+        # Save PGN
+        pgn_filename = f"{base_filename}.pgn"
+        pgn_blob_name = f"{self.pgn_dir}/{pgn_filename}"
         pgn_io = io.StringIO()
         exporter = chess.pgn.FileExporter(pgn_io)
         self.game.accept(exporter)
         pgn_text = pgn_io.getvalue()
+        write_file_to_gcs(
+            pgn_blob_name, pgn_text, content_type="application/x-chess-pgn"
+        )
 
-        safe_white = self.white_player.name().replace("/", "-")
-        safe_black = self.black_player.name().replace("/", "-")
-        filename = f"{time.time_ns()}_{safe_white}_vs_{safe_black}.pgn"
-        blob_name = f"{self.pgn_dir}/{filename}"
-        write_file_to_gcs(blob_name, pgn_text, content_type="application/x-chess-pgn")
+        # Save JSON data
+        game_data = {
+            "white_player": self.white_player.name(),
+            "black_player": self.black_player.name(),
+            "result": self.game.headers.get("Result"),
+            "termination": self.game.headers.get("Termination"),
+            "moves": self.moves_log,
+            "stats": {
+                "white_time": self.white_time,
+                "black_time": self.black_time,
+                "white_cost": self.white_cost,
+                "black_cost": self.black_cost,
+                "total_moves": len(self.board.move_stack),
+            },
+        }
+        json_filename = f"{base_filename}.json"
+        json_blob_name = f"{self.pgn_dir}/{json_filename}"
+        write_json_to_gcs(json_blob_name, game_data)
 
     def get_current_player(self):
         """Return the player whose turn it is."""
@@ -245,7 +272,7 @@ class ChessGame:
             self.is_over = True
             if "Result" not in self.game.headers:
                 self.determine_game_result()
-            self.save_pgn()
+            self.save_game()
             return None
 
         player = self.get_current_player()
@@ -256,7 +283,7 @@ class ChessGame:
                 self.board.turn, f"No valid move provided ({result['error'].value})"
             )
             self.is_over = True
-            self.save_pgn()
+            self.save_game()
             return {"status": "error", "message": "Player failed to move."}
 
         # Extract all data from the result
@@ -265,6 +292,23 @@ class ChessGame:
         reasoning = result.get("reasoning", "No reasoning provided.")
         cost = result.get("cost", 0)
         latency = result.get("latency", 0)
+
+        # Log move data for JSON export
+        move_log_entry = {
+            "player": player.name(),
+            "color": "White" if self.board.turn == chess.WHITE else "Black",
+            "move_number": self.board.fullmove_number,
+            "fen_before": self.board.fen(),
+            "reasoning": reasoning,
+            "rationale": rationale,
+            "cost": cost,
+            "latency": latency,
+        }
+        if isinstance(move, chess.Move):
+            move_log_entry["move"] = {"uci": move.uci(), "san": self.board.san(move)}
+        else:
+            move_log_entry["move"] = move
+        self.moves_log.append(move_log_entry)
 
         # Track statistics for the current move, regardless of what the move is
         if self.board.turn == chess.WHITE:
@@ -277,14 +321,14 @@ class ChessGame:
         if move == "resign":
             self.resign(self.board.turn, "Resigned")
             self.is_over = True
-            self.save_pgn()
+            self.save_game()
             return {"status": "resigned"}
 
         if move == "pass":
             # Stalemate acknowledgment without pushing a move
             self.is_over = True
             self.determine_game_result()
-            self.save_pgn()
+            self.save_game()
             return {
                 "status": "success",
                 "move_san": "pass",
@@ -306,7 +350,7 @@ class ChessGame:
         if self.board.is_game_over(claim_draw=True):
             self.is_over = True
             self.determine_game_result()
-            self.save_pgn()
+            self.save_game()
 
         return {
             "status": "success",
