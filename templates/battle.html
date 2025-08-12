@@ -85,7 +85,7 @@
                     {% endif %}
                     {% if piece %}
                         {% set color_code = 'w' if piece == piece|upper else 'b' %}
-                        {% set type_code = piece|lower %}
+                        {% set type_code = piece|upper %}
                         <img class="piece-img w-7 sm:w-12 md:w-14 h-auto select-none" src="{{ url_for('static', filename='pieces/' ~ color_code ~ type_code ~ '.svg') }}?v=2" alt="" />
                     {% else %}
                         <img class="piece-img w-7 sm:w-12 md:w-14 h-auto select-none" alt="" />

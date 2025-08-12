@@ -203,7 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!pieceImg) return;
             if (piece) {
                 const colorCode = piece === piece.toUpperCase() ? 'w' : 'b';
-                const typeCode = piece.toLowerCase();
+                const typeCode = piece.toUpperCase();
                 pieceImg.src = `/static/pieces/${colorCode}${typeCode}.svg?v=2`;
             } else {
                 pieceImg.removeAttribute('src');
