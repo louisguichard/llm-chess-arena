@@ -159,9 +159,14 @@ class ChessGame:
             cost = response_data.get("cost", 0)
             latency = response_data.get("latency", 0)
 
-            response = completion.choices[0].message.content
-            response_single_line = response.replace("\n", " ")
-            log.info(f"- {player.name()}: {response_single_line}")
+            try:
+                response = completion.choices[0].message.content
+                response_single_line = response.replace("\n", " ")
+                log.info(f"- {player.name()}: {response_single_line}")
+            except Exception as e:
+                log.warning(f"Error in completion: {e}")
+                log.warning(f"Completion: {completion}")
+                response = None
             if response:
                 messages.append({"role": "assistant", "content": response})
             else:
