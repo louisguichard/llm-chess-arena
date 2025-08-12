@@ -3,10 +3,19 @@
 from gcp import read_json_from_gcs, write_json_to_gcs
 
 # K-factor controls how fast ratings move.
-K_FACTOR_DEFAULT = 32
-
-# Where to save ratings
 RATINGS_FILE = "ratings.json"
+
+
+def get_k_factor(total_games):
+    """Return K-factor based on number of games played."""
+    if total_games < 2:
+        return 128
+    elif total_games < 5:
+        return 64
+    elif total_games < 10:
+        return 32
+    else:
+        return 16
 
 
 def expected_score(rating_a, rating_b):
@@ -15,15 +24,16 @@ def expected_score(rating_a, rating_b):
     return 1 / (1 + 10**exponent)
 
 
-def update_elo(rating_a, rating_b, score_a):
+def update_elo(rating_a, rating_b, score_a, k_a, k_b):
     """Return new (rating_a, rating_b) after one game.
 
     score_a is 1 for win, 0.5 for draw, 0 for loss.
+    k_a and k_b are the K-factors for each player.
     """
     exp_a = expected_score(rating_a, rating_b)
     exp_b = expected_score(rating_b, rating_a)
-    new_a = rating_a + K_FACTOR_DEFAULT * (score_a - exp_a)
-    new_b = rating_b + K_FACTOR_DEFAULT * ((1 - score_a) - exp_b)
+    new_a = rating_a + k_a * (score_a - exp_a)
+    new_b = rating_b + k_b * ((1 - score_a) - exp_b)
     return new_a, new_b
 
 
@@ -123,6 +133,10 @@ class RatingsTable:
         if black_id not in self.ratings:
             self.set(black_id, self.default_rating)
 
+        # Get total games played BEFORE this match
+        white_games = self.get_stats(white_id)["total"]
+        black_games = self.get_stats(black_id)["total"]
+
         white_rating = self.get(white_id)
         black_rating = self.get(black_id)
 
@@ -151,8 +165,14 @@ class RatingsTable:
         self.ratings[black_id]["time"] += black_time
         self.ratings[black_id]["cost"] += black_cost
 
+        # Get K-factors
+        k_white = get_k_factor(white_games)
+        k_black = get_k_factor(black_games)
+
         # Update ratings
-        new_white, new_black = update_elo(white_rating, black_rating, score_white)
+        new_white, new_black = update_elo(
+            white_rating, black_rating, score_white, k_white, k_black
+        )
         self.set(white_id, new_white)
         self.set(black_id, new_black)
         self.save()
