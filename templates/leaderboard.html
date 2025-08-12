@@ -13,7 +13,7 @@
                         <th class="px-4 py-4 text-left font-semibold text-sm text-gray-600 dark:text-gray-300">Player</th>
                         <th class="px-4 py-4 text-right font-semibold text-sm text-gray-600 dark:text-gray-300">ELO</th>
                         <th class="px-4 py-4 text-center font-semibold text-sm text-gray-600 dark:text-gray-300">Games</th>
-                        <th class="px-4 py-4 text-center font-semibold text-sm text-gray-600 dark:text-gray-300">W / D / L</th>
+
                         <th class="px-4 py-4 text-center font-semibold text-sm text-gray-600 dark:text-gray-300">Win %</th>
                         <th class="px-4 py-4 text-center font-semibold text-sm text-gray-600 dark:text-gray-300">Time/Move</th>
                         <th class="px-4 py-4 text-center font-semibold text-sm text-gray-600 dark:text-gray-300">Cost/Move</th>
@@ -36,15 +36,7 @@
                             </td>
                             <td class="px-4 py-4 text-right font-mono text-lg font-semibold text-gray-800 dark:text-gray-200">{{ llm.elo | round | int }}</td>
                             <td class="px-4 py-4 text-center font-mono text-gray-600 dark:text-gray-300">{{ llm.matchesPlayed }}</td>
-                            <td class="px-4 py-4 text-center font-mono text-sm">
-                                {% if llm.matchesPlayed > 0 %}
-                                    <span class="text-green-600 dark:text-green-400">{{ llm.wins }}</span> / 
-                                    <span class="text-yellow-600 dark:text-yellow-400">{{ llm.draws }}</span> / 
-                                    <span class="text-red-600 dark:text-red-400">{{ llm.losses }}</span>
-                                {% else %}
-                                    <span class="text-gray-400 dark:text-gray-500">-</span>
-                                {% endif %}
-                            </td>
+
                             <td class="px-4 py-4 text-center font-mono text-gray-600 dark:text-gray-300">
                                 {% if llm.matchesPlayed > 0 %}{{ llm.winRate }}%{% else %}-{% endif %}
                             </td>
