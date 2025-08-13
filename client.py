@@ -65,7 +65,6 @@ class OpenRouterClient:
                                 "choice": {
                                     "type": "string",
                                     "description": "Third, return exactly one move in UCI format from the list of legal moves.",
-                                    "pattern": "^(?:[a-h][1-8][a-h][1-8][qrbn]?|resign|pass)$",
                                 },
                             },
                             "required": ["analysis", "breakdown", "choice"],
