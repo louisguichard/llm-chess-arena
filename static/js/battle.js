@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (gameData.error) {
                 console.error('Game error:', gameData.details);
-                winnerText.textContent = `Error: ${gameData.details}`;
+                winnerSummary.textContent = `Error: ${gameData.details}`;
                 winnerContainer.style.display = 'block';
                 isGameRunning = false;
                 startButton.disabled = false;
@@ -105,17 +105,23 @@ document.addEventListener('DOMContentLoaded', () => {
             if (gameData.is_over) {
                 moveRetryCount = 0;
 
-                winnerText.textContent = 'Game Over!';
+                const winnerColor = 'text-green-600 dark:text-green-500';
+                const loserColor = 'text-red-600 dark:text-red-500';
+
                 const whitePlayerName = `<b>${gameData.white_player.split('/')[1]}</b>`;
                 const blackPlayerName = `<b>${gameData.black_player.split('/')[1]}</b>`;
 
+                let summaryHtml = 'Game over! ';
+
                 if (gameData.result === '1-0') {
-                    winnerSummary.innerHTML = `${whitePlayerName} won against ${blackPlayerName}.`;
+                    summaryHtml += `<span class="${winnerColor}">${whitePlayerName}</span> won against <span class="${loserColor}">${blackPlayerName}</span>.`;
                 } else if (gameData.result === '0-1') {
-                    winnerSummary.innerHTML = `${blackPlayerName} won against ${whitePlayerName}.`;
+                    summaryHtml += `<span class="${winnerColor}">${blackPlayerName}</span> won against <span class="${loserColor}">${whitePlayerName}</span>.`;
                 } else {
-                    winnerSummary.textContent = `Draw.`;
+                    summaryHtml += `Draw.`;
                 }
+
+                winnerSummary.innerHTML = summaryHtml;
                 winnerReason.textContent = `Reason: ${gameData.termination}`;
                 
                 winnerContainer.style.display = 'block';
