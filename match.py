@@ -176,6 +176,14 @@ class ChessGame:
             result = self.extract_move_from_response(response)
             if "move" in result:
                 move = result["move"]
+                # Check if the piece belongs to the right player
+                if isinstance(move, chess.Move):
+                    piece = self.board.piece_at(move.from_square)
+                    if piece and piece.color != self.board.turn:
+                        error_reason = RetryReason.ILLEGAL_MOVE_WRONG_PIECE
+                        attempted = result.get("move_uci")
+                    else:
+                        error_reason = RetryReason.ILLEGAL_MOVE
                 # Check if move is legal
                 if (
                     move == "resign"

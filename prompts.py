@@ -10,6 +10,7 @@ class RetryReason(Enum):
     EMPTY_RESPONSE = "No response from the model."
     INVALID_JSON = "The model didn't return a valid response."
     ILLEGAL_MOVE = "The model only proposed illegal moves."
+    ILLEGAL_MOVE_WRONG_PIECE = "The model tried to move a piece of the wrong color."
     MISSING_CHOICE_KEY = "The model didn't return a valid response."
     MISSING_BREAKDOWN_KEY = "The model didn't return a valid response."
     MISSING_ANALYSIS_KEY = "The model didn't return a valid response."
@@ -164,6 +165,17 @@ def build_retry_message(reason, attempted=None, is_in_check=None):
         return (
             f"Your previous move was illegal.{check_message} Please choose a legal move and return it "
             "in the JSON format."
+        )
+
+    if reason == RetryReason.ILLEGAL_MOVE_WRONG_PIECE:
+        if attempted:
+            return f"""The move '{attempted}' is illegal because it moves a piece to your opponent.
+            You can only move your own pieces. Please analyze the board again and provide a legal move in UCI format.
+            Return ONLY the JSON object."""
+        return (
+            "The move you selected is illegal because it moves a piece that belongs to your opponent. "
+            "You can only move your own pieces. Please analyze the board again and provide a legal move in UCI format. "
+            "Return ONLY the JSON object."
         )
 
     if reason == RetryReason.INVALID_UCI_FORMAT:
