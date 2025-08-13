@@ -23,6 +23,8 @@ ratings = RatingsTable()
 
 
 @app.route("/")
+@app.route("/battle")
+@app.route("/leaderboard")
 def index():
     models = read_models_from_file(MODELS_FILE)
 

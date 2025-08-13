@@ -3,17 +3,48 @@
 {% block head %}
     <script>
         function showPage(page) {
-            if (page === 'battle') {
-                document.getElementById('battle-page').style.display = 'block';
-                document.getElementById('leaderboard-page').style.display = 'none';
-                document.querySelector('[data-page="battle"]').classList.add('text-green-600');
-                document.querySelector('[data-page="leaderboard"]').classList.remove('text-green-600');
-            } else {
-                document.getElementById('battle-page').style.display = 'none';
-                document.getElementById('leaderboard-page').style.display = 'block';
-                document.querySelector('[data-page="battle"]').classList.remove('text-green-600');
-                document.querySelector('[data-page="leaderboard"]').classList.add('text-green-600');
+            const isBattle = page === 'battle';
+            const battleEl = document.getElementById('battle-page');
+            const leaderboardEl = document.getElementById('leaderboard-page');
+            if (battleEl && leaderboardEl) {
+                battleEl.style.display = isBattle ? 'block' : 'none';
+                leaderboardEl.style.display = isBattle ? 'none' : 'block';
             }
+
+            // Update desktop nav active state
+            const battleNav = document.querySelector('.nav-link[data-page="battle"]');
+            const leaderboardNav = document.querySelector('.nav-link[data-page="leaderboard"]');
+            if (battleNav && leaderboardNav) {
+                battleNav.classList.toggle('text-green-600', isBattle);
+                leaderboardNav.classList.toggle('text-green-600', !isBattle);
+            }
+
+            // Update mobile nav active state
+            const battleMobile = document.querySelector('.mobile-nav-link[data-page="battle"]');
+            const leaderboardMobile = document.querySelector('.mobile-nav-link[data-page="leaderboard"]');
+            if (battleMobile && leaderboardMobile) {
+                battleMobile.classList.toggle('text-indigo-500', isBattle);
+                battleMobile.classList.toggle('text-gray-500', !isBattle);
+                battleMobile.classList.toggle('dark:text-gray-400', !isBattle);
+
+                leaderboardMobile.classList.toggle('text-indigo-500', !isBattle);
+                leaderboardMobile.classList.toggle('text-gray-500', isBattle);
+                leaderboardMobile.classList.toggle('dark:text-gray-400', isBattle);
+            }
+        }
+
+        function routePathFor(page) {
+            return page === 'leaderboard' ? '/leaderboard' : '/battle';
+        }
+
+        function navigateTo(page, replace) {
+            const path = routePathFor(page);
+            if (replace) {
+                history.replaceState({ page: page }, '', path);
+            } else {
+                history.pushState({ page: page }, '', path);
+            }
+            showPage(page);
         }
     </script>
 {% endblock %}
@@ -32,11 +63,20 @@
 <script src="{{ url_for('static', filename='js/battle.js') }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
+        const initialPage = window.location.pathname.indexOf('/leaderboard') !== -1 ? 'leaderboard' : 'battle';
+        navigateTo(initialPage, true);
+
         document.querySelectorAll('.nav-link, .mobile-nav-link').forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
-                showPage(e.currentTarget.dataset.page);
+                const page = e.currentTarget.dataset.page;
+                if (page) navigateTo(page, false);
             });
+        });
+
+        window.addEventListener('popstate', (e) => {
+            const page = (e.state && e.state.page) || (window.location.pathname.indexOf('/leaderboard') !== -1 ? 'leaderboard' : 'battle');
+            showPage(page);
         });
     });
 </script>
