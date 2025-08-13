@@ -170,15 +170,6 @@ class ChessGame:
                         "cost": total_cost,
                         "latency": total_latency,
                     }
-                messages.append(
-                    {
-                        "role": "user",
-                        "content": build_retry_message(error_reason)
-                        + "\n\n"
-                        + "As a reminder, here is the current situation:"
-                        + build_user_prompt(self.board),
-                    }
-                )
                 continue
 
             # Extract the move from the response

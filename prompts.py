@@ -7,13 +7,13 @@ from enum import Enum
 class RetryReason(Enum):
     """Enumeration of retry reasons with custom messages."""
 
-    EMPTY_RESPONSE = "empty response"
-    INVALID_JSON = "invalid response"
-    ILLEGAL_MOVE = "illegal move"
-    MISSING_CHOICE_KEY = "missing 'choice' key"
-    MISSING_BREAKDOWN_KEY = "missing 'breakdown' key"
-    MISSING_ANALYSIS_KEY = "missing 'analysis' key"
-    INVALID_UCI_FORMAT = "invalid move format"
+    EMPTY_RESPONSE = "No response from the model."
+    INVALID_JSON = "The model didn't return a valid response."
+    ILLEGAL_MOVE = "The model only proposed illegal moves."
+    MISSING_CHOICE_KEY = "The model didn't return a valid response."
+    MISSING_BREAKDOWN_KEY = "The model didn't return a valid response."
+    MISSING_ANALYSIS_KEY = "The model didn't return a valid response."
+    INVALID_UCI_FORMAT = "The model didn't respected the imposed response format."
 
 
 def board_to_ascii(board):
