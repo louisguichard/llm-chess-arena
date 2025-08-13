@@ -14,8 +14,7 @@ if not OPENROUTER_API_KEY:
     raise RuntimeError("OPENROUTER_API_KEY not found in environment variables")
 
 
-# Global HTTP session and default timeouts
-SESSION = requests.Session()
+# Default timeouts
 CONNECT_TIMEOUT_SECONDS = 10
 READ_TIMEOUT_SECONDS = 300
 
@@ -28,6 +27,7 @@ class OpenRouterClient:
         model,
     ):
         self.model = model
+        self.session = requests.Session()
 
     def name(self):
         return self.model
@@ -78,7 +78,7 @@ class OpenRouterClient:
                 payload["reasoning"] = {"effort": "high"}
 
             log.info(f"Sending request to {model_to_call} - Payload: {payload}")
-            resp = SESSION.post(
+            resp = self.session.post(
                 "https://openrouter.ai/api/v1/chat/completions",
                 headers=headers,
                 json=payload,
@@ -90,7 +90,9 @@ class OpenRouterClient:
             try:
                 data = resp.json()
             except Exception as e:
-                log.error(f"Error parsing JSON: {e} - {resp.text}")
+                log.error(
+                    f"Error parsing JSON: {type(e).__name__} - {e} - Resp object: {resp}"
+                )
                 return None
             try:
                 content = data["choices"][0]["message"]["content"]
