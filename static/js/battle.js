@@ -140,41 +140,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            if (gameData.is_over) {
-                moveRetryCount = 0;
-
-                const whiteIdName = gameData.white_player.split('/')[1];
-                const blackIdName = gameData.black_player.split('/')[1];
-                const whiteName = whiteDisplayName || whiteIdName;
-                const blackName = blackDisplayName || blackIdName;
-
-                if (gameData.result === '1-0') {
+            if (gameData.status === "game_over") {
+                const result = gameData.result;
+                const whiteName = whiteDisplayName || "White";
+                const blackName = blackDisplayName || "Black";
+                if (result === '1-0') {
                     winnerText.innerHTML = `<strong class="text-black dark:text-gray-100">Game over!</strong> <span class="text-green-600 dark:text-green-400 font-semibold">${whiteName}</span> <span class="text-black dark:text-gray-100">won against</span> <span class="text-red-600 dark:text-red-400 font-semibold">${blackName}</span>`;
-                } else if (gameData.result === '0-1') {
+                } else if (result === '0-1') {
                     winnerText.innerHTML = `<strong class="text-black dark:text-gray-100">Game over!</strong> <span class="text-green-600 dark:text-green-400 font-semibold">${blackName}</span> <span class="text-black dark:text-gray-100">won against</span> <span class="text-red-600 dark:text-red-400 font-semibold">${whiteName}</span>`;
                 } else {
                     winnerText.innerHTML = `<strong class="text-black dark:text-gray-100">Game over!</strong> Draw between ${whiteName} and ${blackName}`;
                 }
-
-                // Reason line (subtle)
-                const term = gameData.termination || '';
-                const m = term.match(/\(([^)]+)\)/);
-                const reason = m ? m[1] : term;
-                winnerReason.textContent = reason ? `Reason: ${reason}` : '';
-
-                // Keep Start button centered by forcing message to a full-width block below it
                 winnerContainer.style.display = 'block';
-                winnerContainer.style.width = '100%';
-                winnerContainer.style.textAlign = 'center';
                 isGameRunning = false;
                 startButton.disabled = false;
-                document.getElementById('white-panel').classList.remove('ring-2', 'ring-indigo-500', 'shadow-lg');
-                document.getElementById('black-panel').classList.remove('ring-2', 'ring-indigo-500', 'shadow-lg');
-                if (gameData.fen) {
-                    updateBoard(gameData.fen);
-                    updateStats(gameData);
-                    updateMoveHistory(gameData);
-                }
+                return
+            }
+
+            if (gameData.is_over) {
+                // Last move played, UI is updated, then the game truly ends.
+                updateBoard(gameData.fen);
+                updateStats(gameData);
+                updateMoveHistory(gameData);
+                highlightCurrentPlayer(); // Un-highlight current player
+                setTimeout(playNextMove, 500);
+
             } else if (gameData.status === 'success') {
                 moveRetryCount = 0;
                 updateBoard(gameData.fen);

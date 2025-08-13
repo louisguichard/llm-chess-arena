@@ -150,7 +150,7 @@ def play_move(game_id):
 
         move_result = game.play_next_move(max_retries=2)
 
-        if move_result is None or game.is_over:
+        if move_result and move_result.get("is_over"):
             total_moves = len(game.board.move_stack)
             white_moves = (total_moves + 1) // 2
             black_moves = total_moves // 2
@@ -174,14 +174,10 @@ def play_move(game_id):
                     f"Updated ratings: {game.white_player.name()} vs {game.black_player.name()} -> {result}"
                 )
 
-            final_state = {
-                "is_over": True,
-                "result": result,
-                "termination": termination,
-                "white_player": game.white_player.name(),
-                "black_player": game.black_player.name(),
-            }
-            return jsonify(final_state)
+            # The game is over, but we send the last move to the client
+            # The client will then make one more request, and the game.is_over check at the top
+            # will catch it and return the final game over state.
+            return jsonify(move_result)
 
         return jsonify(move_result)
 

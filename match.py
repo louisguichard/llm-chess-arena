@@ -376,7 +376,17 @@ class ChessGame:
             self.resign(self.board.turn, "Resigned")
             self.is_over = True
             self.save_game()
-            return {"status": "resigned"}
+            return {
+                "status": "resigned",
+                "move_san": "resign",
+                "fen": self.board.fen(),
+                "is_over": self.is_over,
+                "result": self.game.headers.get("Result"),
+                "rationale": rationale,
+                "reasoning": reasoning,
+                "cost": cost,
+                "latency": latency,
+            }
 
         if move == "pass":
             # Stalemate acknowledgment without pushing a move
