@@ -154,9 +154,10 @@ class ChessGame:
                 messages.append(
                     {
                         "role": "user",
-                        "content": build_user_prompt(self.board)
+                        "content": build_retry_message(error_reason)
                         + "\n\n"
-                        + build_retry_message(error_reason),
+                        + "As a reminder, here is the current situation:"
+                        + build_user_prompt(self.board),
                     }
                 )
                 continue
@@ -191,9 +192,10 @@ class ChessGame:
                 messages.append(
                     {
                         "role": "user",
-                        "content": build_user_prompt(self.board)
+                        "content": build_retry_message(error_reason)
                         + "\n\n"
-                        + build_retry_message(error_reason),
+                        + "As a reminder, here is the current situation:"
+                        + build_user_prompt(self.board),
                     }
                 )
                 continue
@@ -230,11 +232,12 @@ class ChessGame:
             messages.append(
                 {
                     "role": "user",
-                    "content": build_user_prompt(self.board)
-                    + "\n\n"
-                    + build_retry_message(
+                    "content": build_retry_message(
                         error_reason, attempted, is_in_check=self.board.is_check()
-                    ),
+                    )
+                    + "\n\n"
+                    + "As a reminder, here is the current situation:"
+                    + build_user_prompt(self.board),
                 }
             )
 
