@@ -176,6 +176,8 @@ def play_move(game_id):
                 "is_over": True,
                 "result": result,
                 "termination": game.game.headers.get("Termination"),
+                "white_player": game.white_player.name(),
+                "black_player": game.black_player.name(),
             }
             return jsonify(final_state)
 

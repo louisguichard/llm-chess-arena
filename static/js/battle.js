@@ -1,7 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('start-game-form');
     const startButton = document.getElementById('start-battle-btn');
+    const winnerContainer = document.getElementById('winner-container');
     const winnerText = document.getElementById('winner-text');
+    const winnerReason = document.getElementById('winner-reason');
     let gameId = null;
     let isGameRunning = false;
 
@@ -40,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Reset UI
-        winnerText.style.display = 'none';
+        winnerContainer.style.display = 'none';
         document.getElementById('white-moves').innerHTML = '<p class="text-gray-400 dark:text-gray-500 italic h-full flex items-center justify-center">Waiting for game to start...</p>';
         document.getElementById('black-moves').innerHTML = '<p class="text-gray-400 dark:text-gray-500 italic h-full flex items-center justify-center">Waiting for game to start...</p>';
         
@@ -90,7 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (gameData.error) {
                 console.error('Game error:', gameData.details);
                 winnerText.textContent = `Error: ${gameData.details}`;
-                winnerText.style.display = 'block';
+                winnerContainer.style.display = 'block';
                 isGameRunning = false;
                 startButton.disabled = false;
                 return;
@@ -98,8 +100,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (gameData.is_over) {
                 moveRetryCount = 0;
-                winnerText.textContent = `Game Over: ${gameData.result} (${gameData.termination})`;
-                winnerText.style.display = 'block';
+
+                winnerText.textContent = 'Game Over!';
+                if (gameData.result === '1-0') {
+                    winnerReason.textContent = `${gameData.white_player.split('/')[1]} won against ${gameData.black_player.split('/')[1]}. Reason: ${gameData.termination}`;
+                } else if (gameData.result === '0-1') {
+                    winnerReason.textContent = `${gameData.black_player.split('/')[1]} won against ${gameData.white_player.split('/')[1]}. Reason: ${gameData.termination}`;
+                } else {
+                    winnerReason.textContent = `Draw. Reason: ${gameData.termination}`;
+                }
+                
+                winnerContainer.style.display = 'block';
                 isGameRunning = false;
                 startButton.disabled = false;
                 document.getElementById('white-panel').classList.remove('ring-2', 'ring-indigo-500', 'shadow-lg');
