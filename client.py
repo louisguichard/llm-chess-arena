@@ -87,7 +87,11 @@ class OpenRouterClient:
             latency = time.time() - start
 
             resp.raise_for_status()
-            data = resp.json()
+            try:
+                data = resp.json()
+            except Exception as e:
+                log.error(f"Error parsing JSON: {e} - {resp.text}")
+                return None
             try:
                 content = data["choices"][0]["message"]["content"]
             except Exception:
