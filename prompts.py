@@ -95,7 +95,6 @@ Example response:
 
 Hard rules:
 - Output ONLY the JSON object. No code fences, no text before or after the JSON.
-- The JSON keys must be exactly in this order: `reasoning`, `rationale`, `move`. Do not reorder keys and do not output the move before the reasoning.
 - The `move` MUST be legal in the current position and in UCI format.
 - If you are checkmated: {"reasoning": "...", "rationale": "...", "move": "resign"}
 - If the game is a stalemate: {"reasoning": "...", "rationale": "...", "move": "pass"}
@@ -146,7 +145,7 @@ def build_user_prompt(board):
         f"White pieces: {white_pieces_str}\n"
         f"Black pieces: {black_pieces_str}\n"
         f"ASCII board (ranks 8→1, files a→h):\n{ascii_board_str}\n\n"
-        "Task: Choose ONE legal move and return ONLY the JSON with keys exactly in this order: reasoning, rationale, move (no extra text)."
+        "Task: Choose ONE legal move and return ONLY the JSON, per the system prompt."
     )
 
 
@@ -212,22 +211,13 @@ Valid output example:
 """
 
     if reason == RetryReason.MISSING_MOVE_KEY:
-        return (
-            "Your JSON is missing the required 'move' key. Return a JSON object with keys in this exact order: "
-            "'reasoning', 'rationale', 'move'."
-        )
+        return "Your JSON is missing the required 'move' key. Return a JSON object with 'reasoning', 'rationale', and 'move' keys."
 
     if reason == RetryReason.MISSING_RATIONALE_KEY:
-        return (
-            "Your JSON is missing the required 'rationale' key. Return a JSON object with keys in this exact order: "
-            "'reasoning', 'rationale', 'move'."
-        )
+        return "Your JSON is missing the required 'rationale' key. Return a JSON object with 'reasoning', 'rationale', and 'move' keys."
 
     if reason == RetryReason.MISSING_REASONING_KEY:
-        return (
-            "Your JSON is missing the required 'reasoning' key. Return a JSON object with keys in this exact order: "
-            "'reasoning', 'rationale', 'move'."
-        )
+        return "Your JSON is missing the required 'reasoning' key. Return a JSON object with 'reasoning', 'rationale', and 'move' keys."
 
     if reason == RetryReason.EMPTY_RESPONSE:
         return "Your response was empty. Return ONLY a single JSON object matching the schema (no extra text)."

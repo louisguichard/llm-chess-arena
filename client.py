@@ -46,37 +46,33 @@ class OpenRouterClient:
             completion = self.client.chat.completions.create(
                 model=model_to_call,
                 messages=messages,
-                # NOTE: Intentionally disabled response_format json_schema.
-                # Gemini models will alphabetically reorder JSON properties when a schema is provided,
-                # which breaks our required key order (reasoning, then rationale, then move).
-                # We rely on the prompt to enforce formatting, and use retries if invalid JSON is returned.
-                # response_format={
-                #     "type": "json_schema",
-                #     "json_schema": {
-                #         "name": "chess_move",
-                #         "strict": True,
-                #         "schema": {
-                #             "type": "object",
-                #             "properties": {
-                #                 "reasoning": {
-                #                     "type": "string",
-                #                     "description": "First, think step-by-step about the position and document your thoughts here. This is your internal monologue.",
-                #                 },
-                #                 "rationale": {
-                #                     "type": "string",
-                #                     "description": "Second, summarize your thinking in a short, one or two-sentence explanation for your final move choice.",
-                #                 },
-                #                 "move": {
-                #                     "type": "string",
-                #                     "description": "Third, return exactly one move in UCI format from the list of legal moves.",
-                #                     "pattern": "^(?:[a-h][1-8][a-h][1-8][qrbn]?|resign|pass)$",
-                #                 },
-                #             },
-                #             "required": ["reasoning", "rationale", "move"],
-                #             "additionalProperties": False,
-                #         },
-                #     },
-                # },
+                response_format={
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": "chess_move",
+                        "strict": True,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "reasoning": {
+                                    "type": "string",
+                                    "description": "First, think step-by-step about the position and document your thoughts here. This is your internal monologue.",
+                                },
+                                "rationale": {
+                                    "type": "string",
+                                    "description": "Second, summarize your thinking in a short, one or two-sentence explanation for your final move choice.",
+                                },
+                                "move": {
+                                    "type": "string",
+                                    "description": "Third, return exactly one move in UCI format from the list of legal moves.",
+                                    "pattern": "^(?:[a-h][1-8][a-h][1-8][qrbn]?|resign|pass)$",
+                                },
+                            },
+                            "required": ["reasoning", "rationale", "move"],
+                            "additionalProperties": False,
+                        },
+                    },
+                },
                 extra_body=extra_body,
             )
             log.debug(f"Received response from {self.model}: {completion}")

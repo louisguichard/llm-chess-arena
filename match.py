@@ -63,12 +63,7 @@ class ChessGame:
             return {"error": RetryReason.EMPTY_RESPONSE}
 
         try:
-            # Find the start and end of the JSON object to be more lenient
-            start_index = response.find("{")
-            end_index = response.rfind("}")
-            if start_index != -1 and end_index != -1 and start_index < end_index:
-                json_str = response[start_index : end_index + 1]
-                parsed_response = json.loads(json_str)
+            parsed_response = json.loads(response.strip())
         except json.JSONDecodeError:
             log.warning(f"Error parsing JSON: {response}")
             return {"error": RetryReason.INVALID_JSON}
