@@ -126,21 +126,18 @@ class ChessGame:
         total_latency = 0.0
 
         while attempts <= max_retries:
-            # Ask the player for its move
             log.debug(
-                f"Attempt {attempts + 1}/{1 + max_retries}: Getting move from {player.name()}..."
-            )
-            log.debug(
-                f"Prompt to {player.name()} (role=user):\n{messages[-1]['content']}"
+                f"Attempt {attempts + 1}/{1 + max_retries} for {player.name()}..."
             )
             response_data = player.chat(messages)
-            log.debug(
-                f"Attempt {attempts + 1}/{1 + max_retries}: Received response for {player.name()}."
-            )
 
             # Handle case where chat returns None (empty response, free retry)
             if not response_data:
                 error_reason = RetryReason.EMPTY_RESPONSE
+                log.warning(
+                    f"⚠️ Empty response from {player.name()} - Waiting 2 seconds..."
+                )
+                time.sleep(2)
                 empty_attempts += 1
                 if empty_attempts > max_empty_retries:
                     return {
@@ -148,15 +145,6 @@ class ChessGame:
                         "cost": total_cost,
                         "latency": total_latency,
                     }
-                messages.append(
-                    {
-                        "role": "user",
-                        "content": build_retry_message(error_reason)
-                        + "\n\n"
-                        + "As a reminder, here is the current situation:"
-                        + build_user_prompt(self.board),
-                    }
-                )
                 continue
 
             completion = response_data["completion"]
@@ -168,16 +156,12 @@ class ChessGame:
 
             try:
                 response = completion["choices"][0]["message"]["content"]
-            except Exception as e:
-                log.warning(f"Error in completion: {e}")
-                log.warning(f"Completion: {completion}")
+            except Exception:
                 response = None
             if response:
                 messages.append({"role": "assistant", "content": response})
             else:
-                log.warning(f"Messages: {messages}")
-                log.warning(f"Completion: {completion}")
-                messages.append({"role": "assistant", "content": ""})
+                log.warning(f"⚠️ Empty response from {player.name()}")
                 error_reason = RetryReason.EMPTY_RESPONSE
                 empty_attempts += 1
                 if empty_attempts > max_empty_retries:

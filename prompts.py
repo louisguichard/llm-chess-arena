@@ -217,5 +217,6 @@ Valid output example:
     if reason == RetryReason.MISSING_ANALYSIS_KEY:
         return "Your JSON is missing the required 'analysis' key. Return a JSON object with 'analysis', 'breakdown', and 'choice' keys."
 
-    if reason == RetryReason.EMPTY_RESPONSE:
-        return "Your response was empty. Return ONLY a single JSON object matching the schema (no extra text)."
+    # Not used anymore
+    # if reason == RetryReason.EMPTY_RESPONSE:
+    #     return "Your response was empty. Return ONLY a single JSON object matching the schema (no extra text)."
