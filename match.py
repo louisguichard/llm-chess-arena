@@ -38,9 +38,6 @@ class ChessGame:
         self.game.headers["Black"] = self.black_player.name()
         self.game.headers["Date"] = time.strftime("%Y.%m.%d")
 
-        # Create one chat conversation per player for the whole game
-        self.white_messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-        self.black_messages = [{"role": "system", "content": SYSTEM_PROMPT}]
         self.is_over = False
 
         # Game data to be saved as JSON
@@ -117,11 +114,11 @@ class ChessGame:
         max_empty_retries to avoid infinite loops.
         """
 
-        # Add current board state to the conversation
-        messages = (
-            self.white_messages if player is self.white_player else self.black_messages
-        )
-        messages.append({"role": "user", "content": build_user_prompt(self.board)})
+        # Build a fresh conversation for this move
+        messages = [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": build_user_prompt(self.board)},
+        ]
 
         attempts = 0
         empty_attempts = 0
