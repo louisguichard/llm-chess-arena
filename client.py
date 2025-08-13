@@ -99,7 +99,10 @@ class OpenRouterClient:
 
             cost = data.get("usage", {}).get("cost") or 0
             upstream_cost = (
-                data.get("usage", {}).get("cost_details", {}).get("upstream_cost") or 0
+                data.get("usage", {})
+                .get("cost_details", {})
+                .get("upstream_inference_cost")
+                or 0
             )
             total_cost = cost + upstream_cost
             log.info(
