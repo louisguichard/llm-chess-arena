@@ -51,6 +51,7 @@ def run_tournament(models, total_matches):
             black_time=game_data["black_time"],
             white_cost=game_data["white_cost"],
             black_cost=game_data["black_cost"],
+            termination=game.game.headers.get("Termination"),
         )
 
     # Print final ratings

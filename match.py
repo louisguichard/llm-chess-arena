@@ -106,9 +106,9 @@ class ChessGame:
     def resign(self, player_color, reason):
         """Handle player resignation."""
         if player_color == chess.WHITE:
-            self.terminate_game("0-1", f"White resigned ({reason})")
+            self.terminate_game("0-1", reason)
         else:
-            self.terminate_game("1-0", f"Black resigned ({reason})")
+            self.terminate_game("1-0", reason)
 
     def get_player_move(self, player, max_retries=2, max_empty_retries=3):
         """Get a move from the specified player with retry logic.

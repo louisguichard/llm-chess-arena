@@ -68,6 +68,8 @@ class RatingsTable:
                 "moves": 0,
                 "time": 0.0,
                 "cost": 0.0,
+                "win_reasons": {},
+                "loss_reasons": {},
             }
         else:
             self.ratings[player_id]["rating"] = rating
@@ -115,6 +117,7 @@ class RatingsTable:
         black_time=0.0,
         white_cost=0.0,
         black_cost=0.0,
+        termination=None,
     ):
         """Update ratings based on a PGN-like result string.
 
@@ -145,16 +148,36 @@ class RatingsTable:
         white_rating = self.get(white_id)
         black_rating = self.get(black_id)
 
+        # Ensure reason maps exist
+        for model_id in [white_id, black_id]:
+            for reason in ["win_reasons", "loss_reasons"]:
+                if reason not in self.ratings[model_id]:
+                    self.ratings[model_id][reason] = {}
+
         if result == "1-0":
             score_white = 1
             # White wins, black loses
             self.ratings[white_id]["wins"] += 1
             self.ratings[black_id]["losses"] += 1
+            if termination:
+                self.ratings[white_id]["win_reasons"][termination] = (
+                    self.ratings[white_id]["win_reasons"].get(termination, 0) + 1
+                )
+                self.ratings[black_id]["loss_reasons"][termination] = (
+                    self.ratings[black_id]["loss_reasons"].get(termination, 0) + 1
+                )
         elif result == "0-1":
             score_white = 0
             # Black wins, white loses
             self.ratings[black_id]["wins"] += 1
             self.ratings[white_id]["losses"] += 1
+            if termination:
+                self.ratings[black_id]["win_reasons"][termination] = (
+                    self.ratings[black_id]["win_reasons"].get(termination, 0) + 1
+                )
+                self.ratings[white_id]["loss_reasons"][termination] = (
+                    self.ratings[white_id]["loss_reasons"].get(termination, 0) + 1
+                )
         else:
             score_white = 0.5
             # Draw for both

@@ -156,6 +156,7 @@ def play_move(game_id):
             black_moves = total_moves // 2
 
             result = game.game.headers.get("Result")
+            termination = game.game.headers.get("Termination")
             if result:
                 ratings.apply_result(
                     game.white_player.name(),
@@ -167,6 +168,7 @@ def play_move(game_id):
                     black_time=game.black_time,
                     white_cost=game.white_cost,
                     black_cost=game.black_cost,
+                    termination=termination,
                 )
                 log.debug(
                     f"Updated ratings: {game.white_player.name()} vs {game.black_player.name()} -> {result}"
@@ -175,7 +177,7 @@ def play_move(game_id):
             final_state = {
                 "is_over": True,
                 "result": result,
-                "termination": game.game.headers.get("Termination"),
+                "termination": termination,
                 "white_player": game.white_player.name(),
                 "black_player": game.black_player.name(),
             }
