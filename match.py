@@ -125,6 +125,8 @@ class ChessGame:
 
         attempts = 0
         empty_attempts = 0
+        total_cost = 0.0
+        total_latency = 0.0
 
         while attempts <= max_retries:
             # Ask the player for its move
@@ -144,7 +146,7 @@ class ChessGame:
                 error_reason = RetryReason.EMPTY_RESPONSE
                 empty_attempts += 1
                 if empty_attempts > max_empty_retries:
-                    return {"error": error_reason}
+                    return {"error": error_reason, "cost": total_cost, "latency": total_latency}
                 messages.append(
                     {
                         "role": "user",
@@ -158,6 +160,9 @@ class ChessGame:
             completion = response_data["completion"]
             cost = response_data.get("cost", 0)
             latency = response_data.get("latency", 0)
+            # Accumulate totals across attempts
+            total_cost += cost
+            total_latency += latency
 
             try:
                 response = completion.choices[0].message.content
@@ -176,7 +181,7 @@ class ChessGame:
                 error_reason = RetryReason.EMPTY_RESPONSE
                 empty_attempts += 1
                 if empty_attempts > max_empty_retries:
-                    return {"error": error_reason}
+                    return {"error": error_reason, "cost": total_cost, "latency": total_latency}
                 messages.append(
                     {
                         "role": "user",
@@ -201,8 +206,8 @@ class ChessGame:
                         "move": move,
                         "rationale": result.get("rationale"),
                         "reasoning": result.get("reasoning"),
-                        "cost": cost,
-                        "latency": latency,
+                        "cost": total_cost,
+                        "latency": total_latency,
                     }
                 else:
                     error_reason = RetryReason.ILLEGAL_MOVE
@@ -228,7 +233,7 @@ class ChessGame:
             )
 
         # All attempts failed
-        return {"error": error_reason}
+        return {"error": error_reason, "cost": total_cost, "latency": total_latency}
 
     def determine_game_result(self):
         """Determine the final result if the game ended naturally."""
@@ -313,6 +318,15 @@ class ChessGame:
         result = self.get_player_move(player, max_retries)
 
         if "error" in result:
+            # Count the time and cost spent on all attempts for this failed move
+            fail_cost = result.get("cost", 0)
+            fail_latency = result.get("latency", 0)
+            if self.board.turn == chess.WHITE:
+                self.white_time += fail_latency
+                self.white_cost += fail_cost
+            else:
+                self.black_time += fail_latency
+                self.black_cost += fail_cost
             self.resign(self.board.turn, result["error"].value)
             self.is_over = True
             self.save_game()
