@@ -190,6 +190,7 @@ def play_move(game_id):
 def get_game_state(game_id):
     entry = games.get(game_id)
     if not entry:
+        log.warning(f"Game state requested for missing game_id={game_id}")
         return jsonify({"error": "Game not found."}), 404
     game = entry["game"]
     state = {

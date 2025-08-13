@@ -132,8 +132,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const gameData = await response.json();
 
             if (gameData.error) {
-                console.error('Game error:', gameData.details);
-                winnerText.textContent = `Error: ${gameData.details}`;
+                const msg = gameData.details || gameData.error || 'Unknown error';
+                console.error('Game error:', msg);
+                winnerText.textContent = `Error: ${msg}`;
                 winnerContainer.style.display = 'block';
                 isGameRunning = false;
                 startButton.disabled = false;
@@ -229,8 +230,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     playerInput.value = llmId;
                     playerName.textContent = option.dataset.llmName;
                     playerInfo.textContent = `${option.dataset.llmProvider} | ${option.dataset.llmElo} ELO`;
-                    
-                    playerAvatar.innerHTML = option.querySelector('svg').outerHTML;
+					
+					const svgEl = option.querySelector('svg');
+					if (svgEl) {
+						playerAvatar.innerHTML = svgEl.outerHTML;
+					} else {
+						const iconWrapper = option.querySelector('.w-6.h-6');
+						playerAvatar.innerHTML = iconWrapper ? iconWrapper.innerHTML : '';
+					}
                     playerAvatar.classList.remove('bg-gray-200', 'dark:bg-zinc-800', 'border-2', 'border-dashed', 'border-gray-300', 'dark:border-zinc-700');
 
                     selectorList.classList.add('hidden');
