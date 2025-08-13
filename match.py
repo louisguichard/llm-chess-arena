@@ -106,9 +106,9 @@ class ChessGame:
     def resign(self, player_color, reason):
         """Handle player resignation."""
         if player_color == chess.WHITE:
-            self.terminate_game("0-1", f"White resigned ({reason})")
+            self.terminate_game("0-1", f"white resigned ({reason})")
         else:
-            self.terminate_game("1-0", f"Black resigned ({reason})")
+            self.terminate_game("1-0", f"black resigned ({reason})")
 
     def get_player_move(self, player, max_retries=2, max_empty_retries=3):
         """Get a move from the specified player with retry logic.
@@ -313,9 +313,7 @@ class ChessGame:
         result = self.get_player_move(player, max_retries)
 
         if "error" in result:
-            self.resign(
-                self.board.turn, f"No valid move provided ({result['error'].value})"
-            )
+            self.resign(self.board.turn, result["error"].value)
             self.is_over = True
             self.save_game()
             return {"status": "error", "message": "Player failed to move."}
@@ -353,7 +351,7 @@ class ChessGame:
             self.black_cost += cost
 
         if move == "resign":
-            self.resign(self.board.turn, "Resigned")
+            self.resign(self.board.turn, "resigned")
             self.is_over = True
             self.save_game()
             return {"status": "resigned"}

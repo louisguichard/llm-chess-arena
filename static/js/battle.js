@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const startButton = document.getElementById('start-battle-btn');
     const winnerContainer = document.getElementById('winner-container');
     const winnerText = document.getElementById('winner-text');
+    const winnerSummary = document.getElementById('winner-summary');
     const winnerReason = document.getElementById('winner-reason');
     let gameId = null;
     let isGameRunning = false;
@@ -43,6 +44,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Reset UI
         winnerContainer.style.display = 'none';
+        winnerText.innerHTML = '';
+        winnerSummary.innerHTML = '';
+        winnerReason.innerHTML = '';
         document.getElementById('white-moves').innerHTML = '<p class="text-gray-400 dark:text-gray-500 italic h-full flex items-center justify-center">Waiting for game to start...</p>';
         document.getElementById('black-moves').innerHTML = '<p class="text-gray-400 dark:text-gray-500 italic h-full flex items-center justify-center">Waiting for game to start...</p>';
         
@@ -102,13 +106,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 moveRetryCount = 0;
 
                 winnerText.textContent = 'Game Over!';
+                const whitePlayerName = `<b>${gameData.white_player.split('/')[1]}</b>`;
+                const blackPlayerName = `<b>${gameData.black_player.split('/')[1]}</b>`;
+
                 if (gameData.result === '1-0') {
-                    winnerReason.textContent = `${gameData.white_player.split('/')[1]} won against ${gameData.black_player.split('/')[1]}. Reason: ${gameData.termination}`;
+                    winnerSummary.innerHTML = `${whitePlayerName} won against ${blackPlayerName}.`;
                 } else if (gameData.result === '0-1') {
-                    winnerReason.textContent = `${gameData.black_player.split('/')[1]} won against ${gameData.white_player.split('/')[1]}. Reason: ${gameData.termination}`;
+                    winnerSummary.innerHTML = `${blackPlayerName} won against ${whitePlayerName}.`;
                 } else {
-                    winnerReason.textContent = `Draw. Reason: ${gameData.termination}`;
+                    winnerSummary.textContent = `Draw.`;
                 }
+                winnerReason.textContent = `Reason: ${gameData.termination}`;
                 
                 winnerContainer.style.display = 'block';
                 isGameRunning = false;
