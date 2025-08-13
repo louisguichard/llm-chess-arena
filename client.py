@@ -16,7 +16,7 @@ if not OPENROUTER_API_KEY:
 
 # Default timeouts
 CONNECT_TIMEOUT_SECONDS = 10
-READ_TIMEOUT_SECONDS = 300
+READ_TIMEOUT_SECONDS = 600
 
 
 class OpenRouterClient:
@@ -89,10 +89,8 @@ class OpenRouterClient:
             resp.raise_for_status()
             try:
                 data = resp.json()
-            except Exception as e:
-                log.error(
-                    f"Error parsing JSON: {type(e).__name__} - {e} - Resp object: {resp}"
-                )
+            except Exception:
+                log.error("Error parsing response from the model.")
                 return None
             try:
                 content = data["choices"][0]["message"]["content"]
