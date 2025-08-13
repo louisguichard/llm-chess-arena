@@ -419,6 +419,7 @@ class ChessGame:
         return {
             "status": "success",
             "move_san": san_move,
+            "move_uci": move.uci(),
             "fen": self.board.fen(),
             "is_over": self.is_over,
             "result": self.game.headers.get("Result"),
