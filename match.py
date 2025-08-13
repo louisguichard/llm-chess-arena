@@ -304,6 +304,7 @@ class ChessGame:
             return None
 
         player = self.get_current_player()
+        mover_color = "white" if self.board.turn == chess.WHITE else "black"
         result = self.get_player_move(player, max_retries)
 
         if "error" in result:
@@ -326,6 +327,7 @@ class ChessGame:
                 "fen": self.board.fen(),
                 "is_over": True,
                 "result": self.game.headers.get("Result"),
+                "color": mover_color,
                 "rationale": result.get("rationale", result["error"].value),
                 "reasoning": result.get("reasoning", ""),
                 "cost": fail_cost,
@@ -375,6 +377,7 @@ class ChessGame:
                 "fen": self.board.fen(),
                 "is_over": self.is_over,
                 "result": self.game.headers.get("Result"),
+                "color": mover_color,
                 "rationale": rationale,
                 "reasoning": reasoning,
                 "cost": cost,
@@ -393,6 +396,7 @@ class ChessGame:
                 "fen": self.board.fen(),
                 "is_over": True,
                 "result": self.game.headers.get("Result"),
+                "color": mover_color,
                 "rationale": rationale,
                 "reasoning": reasoning,
                 "cost": cost,
@@ -418,6 +422,7 @@ class ChessGame:
             "fen": self.board.fen(),
             "is_over": self.is_over,
             "result": self.game.headers.get("Result"),
+            "color": mover_color,
             "rationale": rationale,
             "reasoning": reasoning,
             "cost": cost,

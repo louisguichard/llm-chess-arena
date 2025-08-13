@@ -163,7 +163,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateBoard(gameData.fen);
                 updateStats(gameData);
                 updateMoveHistory(gameData);
-                highlightCurrentPlayer(); // Un-highlight current player
+                // Highlight based on FEN side to move
+                highlightFromFEN(gameData.fen);
                 setTimeout(playNextMove, 500);
 
             } else if (gameData.status === 'success') {
@@ -171,8 +172,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateBoard(gameData.fen);
                 updateStats(gameData);
                 updateMoveHistory(gameData);
-                turn = turn === 'white' ? 'black' : 'white';
-                highlightCurrentPlayer();
+                // Highlight based on FEN side to move
+                highlightFromFEN(gameData.fen);
                 setTimeout(playNextMove, 500); // Wait 500ms before next move
             }
         } catch (err) {
@@ -194,6 +195,20 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('black-panel').classList.add('ring-2', 'ring-green-500', 'shadow-lg');
             document.getElementById('white-panel').classList.remove('ring-2', 'ring-green-500', 'shadow-lg');
         }
+    }
+
+    function highlightFromFEN(fen) {
+        try {
+            const parts = (fen || '').split(' ');
+            const side = parts[1] === 'b' ? 'black' : 'white';
+            document.getElementById('white-panel').classList.remove('ring-2', 'ring-green-500', 'shadow-lg');
+            document.getElementById('black-panel').classList.remove('ring-2', 'ring-green-500', 'shadow-lg');
+            if (side === 'white') {
+                document.getElementById('white-panel').classList.add('ring-2', 'ring-green-500', 'shadow-lg');
+            } else {
+                document.getElementById('black-panel').classList.add('ring-2', 'ring-green-500', 'shadow-lg');
+            }
+        } catch (e) {}
     }
 
     function setupPlayerPanels() {
@@ -292,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateStats(gameData) {
-        if (turn === 'white') {
+        if (gameData.color === 'white') {
             whiteTime += gameData.latency;
             whiteCost += gameData.cost;
             document.getElementById('white-time').textContent = `${whiteTime.toFixed(2)}s`;
@@ -306,7 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateMoveHistory(gameData) {
-        const moveHistoryContainer = document.getElementById(`${turn}-moves`);
+        const moveHistoryContainer = document.getElementById(`${gameData.color}-moves`);
         
         // Clear the "Waiting for game to start..." message on the first move
         const initialMessage = moveHistoryContainer.querySelector('p');
