@@ -140,7 +140,11 @@ def play_move(game_id):
         with lock:
             if game.is_over:
                 return jsonify(
-                    {"status": "game_over", "result": game.game.headers.get("Result")}
+                    {
+                        "status": "game_over",
+                        "result": game.game.headers.get("Result"),
+                        "termination": game.game.headers.get("Termination"),
+                    }
                 )
 
             move_result = game.play_next_move(max_retries=2)

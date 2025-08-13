@@ -327,7 +327,7 @@ class ChessGame:
                 "fen": self.board.fen(),
                 "is_over": True,
                 "result": self.game.headers.get("Result"),
-                "rationale": result.get("rationale", "Failed to provide a legal move."),
+                "rationale": result.get("rationale", result["error"].value),
                 "reasoning": result.get("reasoning", ""),
                 "cost": fail_cost,
                 "latency": fail_latency,
