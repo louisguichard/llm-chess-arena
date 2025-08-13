@@ -77,7 +77,7 @@ class OpenRouterClient:
             if self.model == "openai/gpt-5-high":  # high reasoning effort
                 payload["reasoning"] = {"effort": "high"}
 
-            log.info(f"Sending request to {model_to_call}...")
+            log.info(f"Sending request to {model_to_call} - Payload: {payload}")
             resp = SESSION.post(
                 "https://openrouter.ai/api/v1/chat/completions",
                 headers=headers,
@@ -99,7 +99,7 @@ class OpenRouterClient:
             )
             total_cost = cost + upstream_cost
             log.info(
-                f"Received response from {self.model} | Cost: {total_cost:.3f}€ (including {upstream_cost:.3f}€ upstream) | Latency: {latency:.1f}s | Content: {content}"
+                f"Received response from {self.model} - Cost: {total_cost:.3f}€ (including {upstream_cost:.3f}€ upstream) - Latency: {latency:.1f}s - Content: {content}"
             )
 
             return {"completion": data, "cost": total_cost, "latency": latency}

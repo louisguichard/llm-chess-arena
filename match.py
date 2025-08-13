@@ -170,8 +170,6 @@ class ChessGame:
 
             try:
                 response = completion["choices"][0]["message"]["content"]
-                response_single_line = response.replace("\n", " ")
-                log.info(f"- {player.name()}: {response_single_line}")
             except Exception as e:
                 log.warning(f"Error in completion: {e}")
                 log.warning(f"Completion: {completion}")
