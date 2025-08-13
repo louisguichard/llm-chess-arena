@@ -30,7 +30,7 @@ meta-llama/llama-4-maverick, Llama 4 Maverick, [Open-source]
 
 # Mistral AI
 mistralai/mixtral-8x7b-instruct, Mixtral 8x7B Instruct, [Open-source]
-mistralai/mistral-medium-3, Mistral Medium 3
+mistralai/mistral-medium-3.1, Mistral Medium 3.1
 
 # DeepSeek
 deepseek/deepseek-r1:free, DeepSeek R1, [Open-source]
