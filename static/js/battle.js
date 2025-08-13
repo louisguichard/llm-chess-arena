@@ -3,7 +3,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const startButton = document.getElementById('start-battle-btn');
     const winnerContainer = document.getElementById('winner-container');
     const winnerText = document.getElementById('winner-text');
-    const winnerSummary = document.getElementById('winner-summary');
     const winnerReason = document.getElementById('winner-reason');
     let gameId = null;
     let isGameRunning = false;
@@ -14,6 +13,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let blackCost = 0;
     let turn = 'white';
     let moveRetryCount = 0;
+    let whiteDisplayName = '';
+    let blackDisplayName = '';
 
     async function fetchWithRetry(url, options, retries = 3, delay = 500) {
         for (let attempt = 0; attempt <= retries; attempt++) {
@@ -37,6 +38,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const whitePlayer = form.elements.white_player.value;
         const blackPlayer = form.elements.black_player.value;
 
+        // Capture chosen display names for later use
+        const whiteNameEl = document.querySelector('#white-panel .player-name');
+        const blackNameEl = document.querySelector('#black-panel .player-name');
+        whiteDisplayName = whiteNameEl ? whiteNameEl.textContent : '';
+        blackDisplayName = blackNameEl ? blackNameEl.textContent : '';
+
         if (!whitePlayer || !blackPlayer || whitePlayer === blackPlayer) {
             alert('Please select two different opponents.');
             return;
@@ -44,9 +51,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Reset UI
         winnerContainer.style.display = 'none';
-        winnerText.innerHTML = '';
-        winnerSummary.innerHTML = '';
-        winnerReason.innerHTML = '';
         document.getElementById('white-moves').innerHTML = '<p class="text-gray-400 dark:text-gray-500 italic h-full flex items-center justify-center">Waiting for game to start...</p>';
         document.getElementById('black-moves').innerHTML = '<p class="text-gray-400 dark:text-gray-500 italic h-full flex items-center justify-center">Waiting for game to start...</p>';
         
@@ -95,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (gameData.error) {
                 console.error('Game error:', gameData.details);
-                winnerSummary.textContent = `Error: ${gameData.details}`;
+                winnerText.textContent = `Error: ${gameData.details}`;
                 winnerContainer.style.display = 'block';
                 isGameRunning = false;
                 startButton.disabled = false;
@@ -105,26 +109,29 @@ document.addEventListener('DOMContentLoaded', () => {
             if (gameData.is_over) {
                 moveRetryCount = 0;
 
-                const winnerColor = 'text-green-600 dark:text-green-500';
-                const loserColor = 'text-red-600 dark:text-red-500';
-
-                const whitePlayerName = `<b>${gameData.white_player.split('/')[1]}</b>`;
-                const blackPlayerName = `<b>${gameData.black_player.split('/')[1]}</b>`;
-
-                let summaryHtml = 'Game over! ';
+                const whiteIdName = gameData.white_player.split('/')[1];
+                const blackIdName = gameData.black_player.split('/')[1];
+                const whiteName = whiteDisplayName || whiteIdName;
+                const blackName = blackDisplayName || blackIdName;
 
                 if (gameData.result === '1-0') {
-                    summaryHtml += `<span class="${winnerColor}">${whitePlayerName}</span> won against <span class="${loserColor}">${blackPlayerName}</span>.`;
+                    winnerText.innerHTML = `<strong class="text-black dark:text-gray-100">Game over!</strong> <span class="text-green-600 dark:text-green-400 font-semibold">${whiteName}</span> <span class="text-black dark:text-gray-100">won against</span> <span class="text-red-600 dark:text-red-400 font-semibold">${blackName}</span>`;
                 } else if (gameData.result === '0-1') {
-                    summaryHtml += `<span class="${winnerColor}">${blackPlayerName}</span> won against <span class="${loserColor}">${whitePlayerName}</span>.`;
+                    winnerText.innerHTML = `<strong class="text-black dark:text-gray-100">Game over!</strong> <span class="text-green-600 dark:text-green-400 font-semibold">${blackName}</span> <span class="text-black dark:text-gray-100">won against</span> <span class="text-red-600 dark:text-red-400 font-semibold">${whiteName}</span>`;
                 } else {
-                    summaryHtml += `Draw.`;
+                    winnerText.innerHTML = `<strong class="text-black dark:text-gray-100">Game over!</strong> Draw between ${whiteName} and ${blackName}`;
                 }
 
-                winnerSummary.innerHTML = summaryHtml;
-                winnerReason.textContent = `Reason: ${gameData.termination}`;
-                
+                // Reason line (subtle)
+                const term = gameData.termination || '';
+                const m = term.match(/\(([^)]+)\)/);
+                const reason = m ? m[1] : term;
+                winnerReason.textContent = reason ? `Reason: ${reason}` : '';
+
+                // Keep Start button centered by forcing message to a full-width block below it
                 winnerContainer.style.display = 'block';
+                winnerContainer.style.width = '100%';
+                winnerContainer.style.textAlign = 'center';
                 isGameRunning = false;
                 startButton.disabled = false;
                 document.getElementById('white-panel').classList.remove('ring-2', 'ring-indigo-500', 'shadow-lg');

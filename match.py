@@ -106,9 +106,9 @@ class ChessGame:
     def resign(self, player_color, reason):
         """Handle player resignation."""
         if player_color == chess.WHITE:
-            self.terminate_game("0-1", f"white resigned ({reason})")
+            self.terminate_game("0-1", f"White resigned ({reason})")
         else:
-            self.terminate_game("1-0", f"black resigned ({reason})")
+            self.terminate_game("1-0", f"Black resigned ({reason})")
 
     def get_player_move(self, player, max_retries=2, max_empty_retries=3):
         """Get a move from the specified player with retry logic.
@@ -146,7 +146,11 @@ class ChessGame:
                 error_reason = RetryReason.EMPTY_RESPONSE
                 empty_attempts += 1
                 if empty_attempts > max_empty_retries:
-                    return {"error": error_reason, "cost": total_cost, "latency": total_latency}
+                    return {
+                        "error": error_reason,
+                        "cost": total_cost,
+                        "latency": total_latency,
+                    }
                 messages.append(
                     {
                         "role": "user",
@@ -181,7 +185,11 @@ class ChessGame:
                 error_reason = RetryReason.EMPTY_RESPONSE
                 empty_attempts += 1
                 if empty_attempts > max_empty_retries:
-                    return {"error": error_reason, "cost": total_cost, "latency": total_latency}
+                    return {
+                        "error": error_reason,
+                        "cost": total_cost,
+                        "latency": total_latency,
+                    }
                 messages.append(
                     {
                         "role": "user",
@@ -365,7 +373,7 @@ class ChessGame:
             self.black_cost += cost
 
         if move == "resign":
-            self.resign(self.board.turn, "resigned")
+            self.resign(self.board.turn, "Resigned")
             self.is_over = True
             self.save_game()
             return {"status": "resigned"}
