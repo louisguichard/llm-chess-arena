@@ -1,15 +1,4 @@
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
-
-if os.getenv("ENV") == "local":
-    print("Running in local environment.")
-else:
-    print("Running in production environment.")
-    from gevent import monkey
-
-    monkey.patch_all()
+import threading
 
 
 from flask import (
@@ -130,7 +119,7 @@ def start_game():
     )
 
     game_id = str(uuid.uuid4())
-    games[game_id] = game
+    games[game_id] = {"game": game, "lock": threading.Lock()}
     log.info(f"Started new game: {game_id}")
 
     return jsonify({"game_id": game_id})
@@ -138,48 +127,52 @@ def start_game():
 
 @app.route("/api/play_move/<game_id>", methods=["POST"])
 def play_move(game_id):
-    game = games.get(game_id)
-    if not game:
+    entry = games.get(game_id)
+    if not entry:
         return jsonify({"error": "Game not found."}), 404
 
+    game = entry["game"]
+    lock = entry["lock"]
+
     try:
-        if game.is_over:
-            return jsonify(
-                {"status": "game_over", "result": game.game.headers.get("Result")}
-            )
-
-        move_result = game.play_next_move(max_retries=2)
-
-        if move_result and move_result.get("is_over"):
-            total_moves = len(game.board.move_stack)
-            white_moves = (total_moves + 1) // 2
-            black_moves = total_moves // 2
-
-            result = game.game.headers.get("Result")
-            termination = game.game.headers.get("Termination")
-            if result:
-                ratings.apply_result(
-                    game.white_player.name(),
-                    game.black_player.name(),
-                    result,
-                    white_moves=white_moves,
-                    black_moves=black_moves,
-                    white_time=game.white_time,
-                    black_time=game.black_time,
-                    white_cost=game.white_cost,
-                    black_cost=game.black_cost,
-                    termination=termination,
-                )
-                log.debug(
-                    f"Updated ratings: {game.white_player.name()} vs {game.black_player.name()} -> {result}"
+        with lock:
+            if game.is_over:
+                return jsonify(
+                    {"status": "game_over", "result": game.game.headers.get("Result")}
                 )
 
-            # The game is over, but we send the last move to the client
-            # The client will then make one more request, and the game.is_over check at the top
-            # will catch it and return the final game over state.
+            move_result = game.play_next_move(max_retries=2)
+
+            if move_result and move_result.get("is_over"):
+                total_moves = len(game.board.move_stack)
+                white_moves = (total_moves + 1) // 2
+                black_moves = total_moves // 2
+
+                result = game.game.headers.get("Result")
+                termination = game.game.headers.get("Termination")
+                if result:
+                    ratings.apply_result(
+                        game.white_player.name(),
+                        game.black_player.name(),
+                        result,
+                        white_moves=white_moves,
+                        black_moves=black_moves,
+                        white_time=game.white_time,
+                        black_time=game.black_time,
+                        white_cost=game.white_cost,
+                        black_cost=game.black_cost,
+                        termination=termination,
+                    )
+                    log.debug(
+                        f"Updated ratings: {game.white_player.name()} vs {game.black_player.name()} -> {result}"
+                    )
+
+                # The game is over, but we send the last move to the client
+                # The client will then make one more request, and the game.is_over check at the top
+                # will catch it and return the final game over state.
+                return jsonify(move_result)
+
             return jsonify(move_result)
-
-        return jsonify(move_result)
 
     except Exception as e:
         log.error(f"Error during game execution: {e}")
@@ -189,6 +182,27 @@ def play_move(game_id):
             "details": str(e),
         }
         return jsonify(error_event), 500
+
+
+@app.route("/api/game/<game_id>", methods=["GET"])
+def get_game_state(game_id):
+    entry = games.get(game_id)
+    if not entry:
+        return jsonify({"error": "Game not found."}), 404
+    game = entry["game"]
+    state = {
+        "game_id": game_id,
+        "is_over": game.is_over,
+        "fen": game.board.fen(),
+        "result": game.game.headers.get("Result"),
+        "termination": game.game.headers.get("Termination"),
+        "white_time": game.white_time,
+        "black_time": game.black_time,
+        "white_cost": game.white_cost,
+        "black_cost": game.black_cost,
+        "moves": game.moves_log,
+    }
+    return jsonify(state)
 
 
 if __name__ == "__main__":

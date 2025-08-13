@@ -169,7 +169,7 @@ class ChessGame:
             total_latency += latency
 
             try:
-                response = completion.choices[0].message.content
+                response = completion["choices"][0]["message"]["content"]
                 response_single_line = response.replace("\n", " ")
                 log.info(f"- {player.name()}: {response_single_line}")
             except Exception as e:
@@ -338,7 +338,18 @@ class ChessGame:
             self.resign(self.board.turn, result["error"].value)
             self.is_over = True
             self.save_game()
-            return {"status": "error", "message": "Player failed to move."}
+            return {
+                "status": "error",
+                "message": "Player failed to move.",
+                "move_san": "resign",
+                "fen": self.board.fen(),
+                "is_over": True,
+                "result": self.game.headers.get("Result"),
+                "rationale": result.get("rationale", "Failed to provide a legal move."),
+                "reasoning": result.get("reasoning", ""),
+                "cost": fail_cost,
+                "latency": fail_latency,
+            }
 
         # Extract all data from the result
         move = result["move"]
