@@ -54,21 +54,21 @@ class OpenRouterClient:
                         "schema": {
                             "type": "object",
                             "properties": {
-                                "reasoning": {
+                                "analysis": {
                                     "type": "string",
                                     "description": "First, think step-by-step about the position and document your thoughts here. This is your internal monologue.",
                                 },
-                                "rationale": {
+                                "breakdown": {
                                     "type": "string",
                                     "description": "Second, summarize your thinking in a short, one or two-sentence explanation for your final move choice.",
                                 },
-                                "move": {
+                                "choice": {
                                     "type": "string",
                                     "description": "Third, return exactly one move in UCI format from the list of legal moves.",
                                     "pattern": "^(?:[a-h][1-8][a-h][1-8][qrbn]?|resign|pass)$",
                                 },
                             },
-                            "required": ["reasoning", "rationale", "move"],
+                            "required": ["analysis", "breakdown", "choice"],
                             "additionalProperties": False,
                         },
                     },

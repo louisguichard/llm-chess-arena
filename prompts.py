@@ -12,10 +12,10 @@ class RetryReason(Enum):
     )
     INVALID_JSON = "Your output was not valid JSON or contained extra text. Return ONLY one JSON object matching the schema (no code fences, no extra text)."
     ILLEGAL_MOVE = "Your move is illegal in the current position. Make sure you are generating a valid move."
-    MISSING_MOVE_KEY = "Your JSON is missing the required 'move' key."
-    MISSING_RATIONALE_KEY = "Your JSON is missing the required 'rationale' key."
-    MISSING_REASONING_KEY = "Your JSON is missing the required 'reasoning' key."
-    INVALID_UCI_FORMAT = "The 'move' value is not valid UCI. It must match ^[a-h][1-8][a-h][1-8][qrbn]?$."
+    MISSING_MOVE_KEY = "Your JSON is missing the required 'choice' key."
+    MISSING_RATIONALE_KEY = "Your JSON is missing the required 'breakdown' key."
+    MISSING_REASONING_KEY = "Your JSON is missing the required 'analysis' key."
+    INVALID_UCI_FORMAT = "The 'choice' value is not valid UCI. It must match ^[a-h][1-8][a-h][1-8][qrbn]?$."
 
 
 def board_to_ascii(board):
@@ -81,23 +81,23 @@ Follow these steps to decide on your move:
     - Confirm the exact UCI string and that the final move is legal. If a tempting idea fails these checks, switch to a legal alternative.
 
 Output format:
-- Return your decision as ONE JSON object with keys in this exact order: `reasoning`, `rationale`, `move`.
-- `reasoning`: Your detailed internal analysis (step-by-step). Include candidate moves considered, concrete lines and detailed checks for legality.
-- `rationale`: A brief 1–2 sentence summary of why the chosen move is best.
-- `move`: Exactly one UCI move (e.g., "e2e4", "e7e8q"), or "resign" if checkmated, or "pass" only if the position is a stalemate.
+- Return your decision as ONE JSON object with keys in this exact order: `analysis`, `breakdown`, `choice`.
+- `analysis`: Your detailed internal analysis (step-by-step). Include candidate moves considered, concrete lines and detailed checks for legality.
+- `breakdown`: A brief 1–2 sentence summary of why the chosen move is best.
+- `choice`: Exactly one UCI move (e.g., "e2e4", "e7e8q"), or "resign" if checkmated, or "pass" only if the position is a stalemate.
 
 Example response:
 {
-  "reasoning": "Opponent just played Nf6, developing and increasing control over e4 and g4. Threat scan: no direct threat against my king now, but ...Nxe4 could become possible if I neglect the center; also ...Bb4+ might be annoying after Nc3. Candidate checks/captures/forcing: 1) d2d4 (strike the center), 2) c2c4 (space, but concedes d4), 3) g1f3 (develop, defend e5/d4 squares), 4) c1g5 (? pin idea). First I consider c1g5 to pin the knight. Legality/path check for c1g5: squares d2, e3, f4 must be empty and g5 must be empty or hold an opponent piece; that is satisfied here, but after ...Ne4 and ...Bb4+ tactics my bishop may be misplaced and it doesn’t contest the center. Next I consider e2e4 to seize space; legality check: e2 to e4 is a two-step pawn push from the starting rank, so e3 must be empty and e4 must be empty. That is true here, but tactically ...Nxe4 might follow; safer is central tension first. Now d2d4: legality check: path is clear (d3 empty), destination d4 empty; it challenges the center, opens my c1-bishop, and blunts ...Nxe4 because d4xe5 gains time if Black captures. Calculate key lines: 1.d2d4 exd4 2.g1f3 Nc6 3.c2c3 with a solid center; or 1...Nxe4 2.d4e5 (illegal, correction: capture notation must be d4xe5; the UCI string is d4e5 if legal). Re-check: after 1.d2d4, ...Nxe4 loses a central pawn after d4xe5 with tempo; king safety is fine. Final legality check: d2d4 is legal and correctly formatted in UCI. Conclude d2d4.",
-  "rationale": "Challenge the center, improve piece activity, and reduce Black’s ...Nxe4 ideas while keeping king safety.",
-  "move": "d2d4"
+  "analysis": "Opponent just played Nf6, developing and increasing control over e4 and g4. Threat scan: no direct threat against my king now, but ...Nxe4 could become possible if I neglect the center; also ...Bb4+ might be annoying after Nc3. Candidate checks/captures/forcing: 1) d2d4 (strike the center), 2) c2c4 (space, but concedes d4), 3) g1f3 (develop, defend e5/d4 squares), 4) c1g5 (? pin idea). First I consider c1g5 to pin the knight. Legality/path check for c1g5: squares d2, e3, f4 must be empty and g5 must be empty or hold an opponent piece; that is satisfied here, but after ...Ne4 and ...Bb4+ tactics my bishop may be misplaced and it doesn’t contest the center. Next I consider e2e4 to seize space; legality check: e2 to e4 is a two-step pawn push from the starting rank, so e3 must be empty and e4 must be empty. That is true here, but tactically ...Nxe4 might follow; safer is central tension first. Now d2d4: legality check: path is clear (d3 empty), destination d4 empty; it challenges the center, opens my c1-bishop, and blunts ...Nxe4 because d4xe5 gains time if Black captures. Calculate key lines: 1.d2d4 exd4 2.g1f3 Nc6 3.c2c3 with a solid center; or 1...Nxe4 2.d4e5 (illegal, correction: capture notation must be d4xe5; the UCI string is d4e5 if legal). Re-check: after 1.d2d4, ...Nxe4 loses a central pawn after d4xe5 with tempo; king safety is fine. Final legality check: d2d4 is legal and correctly formatted in UCI. Conclude d2d4.",
+  "breakdown": "Challenge the center, improve piece activity, and reduce Black’s ...Nxe4 ideas while keeping king safety.",
+  "choice": "d2d4"
 }
 
 Hard rules:
 - Output ONLY the JSON object. No code fences, no text before or after the JSON.
-- The `move` MUST be legal in the current position and in UCI format.
-- If you are checkmated: {"reasoning": "...", "rationale": "...", "move": "resign"}
-- If the game is a stalemate: {"reasoning": "...", "rationale": "...", "move": "pass"}
+- The `choice` MUST be legal in the current position and in UCI format.
+- If you are checkmated: {"analysis": "...", "breakdown": "...", "choice": "resign"}
+- If the game is a stalemate: {"analysis": "...", "breakdown": "...", "choice": "pass"}
 - Always consider the opponent’s last move and ensure your king is not in check."""
 
 
@@ -186,7 +186,7 @@ Valid examples:
 - 'e2e4', 'd4e5', 'g1f3', 'c1g5', 'e7e8q' (promotion).
 
 Return ONLY the JSON object."""
-        return f"""The 'move' value is not valid UCI. It must match {pattern}. UCI is from-square + to-square (+ optional promotion piece). Do NOT include 'x', '+', '-' or piece letters. For captures, just write the to-square.
+        return f"""The 'choice' value is not valid UCI. It must match {pattern}. UCI is from-square + to-square (+ optional promotion piece). Do NOT include 'x', '+', '-' or piece letters. For captures, just write the to-square.
 
 Bad examples and corrections:
 - 'd4xe5' -> 'd4e5'
@@ -200,24 +200,24 @@ Valid examples:
 Return ONLY the JSON object."""
 
     if reason == RetryReason.INVALID_JSON:
-        return """Your output was not valid JSON or contained extra text. Return ONLY one JSON object that starts with '{' and ends with '}', with absolutely no text before or after it. The JSON must have keys in this exact order: 'reasoning', 'rationale', 'move'. Do not use code fences or text before or after the JSON.
+        return """Your output was not valid JSON or contained extra text. Return ONLY one JSON object that starts with '{' and ends with '}', with absolutely no text before or after it. The JSON must have keys in this exact order: 'analysis', 'breakdown', 'choice'. Do not use code fences or text before or after the JSON.
 
 Valid output example:
 {
-  "reasoning": "Sorry for the invalid response before. I considered central control and king safety...",
-  "rationale": "Develop and control the center while keeping the king safe.",
-  "move": "e2e4"
+  "analysis": "Sorry for the invalid response before. I considered central control and king safety...",
+  "breakdown": "Develop and control the center while keeping the king safe.",
+  "choice": "e2e4"
 }
 """
 
     if reason == RetryReason.MISSING_MOVE_KEY:
-        return "Your JSON is missing the required 'move' key. Return a JSON object with 'reasoning', 'rationale', and 'move' keys."
+        return "Your JSON is missing the required 'choice' key. Return a JSON object with 'analysis', 'breakdown', and 'choice' keys."
 
     if reason == RetryReason.MISSING_RATIONALE_KEY:
-        return "Your JSON is missing the required 'rationale' key. Return a JSON object with 'reasoning', 'rationale', and 'move' keys."
+        return "Your JSON is missing the required 'breakdown' key. Return a JSON object with 'analysis', 'breakdown', and 'choice' keys."
 
     if reason == RetryReason.MISSING_REASONING_KEY:
-        return "Your JSON is missing the required 'reasoning' key. Return a JSON object with 'reasoning', 'rationale', and 'move' keys."
+        return "Your JSON is missing the required 'analysis' key. Return a JSON object with 'analysis', 'breakdown', and 'choice' keys."
 
     if reason == RetryReason.EMPTY_RESPONSE:
         return "Your response was empty. Return ONLY a single JSON object matching the schema (no extra text)."

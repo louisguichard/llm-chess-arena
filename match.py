@@ -68,20 +68,20 @@ class ChessGame:
             log.warning(f"Error parsing JSON: {response}")
             return {"error": RetryReason.INVALID_JSON}
 
-        if "reasoning" not in parsed_response:
-            log.warning(f"Missing 'reasoning' key in response: {parsed_response}")
+        if "analysis" not in parsed_response:
+            log.warning(f"Missing 'analysis' key in response: {parsed_response}")
             return {"error": RetryReason.MISSING_REASONING_KEY}
-        if "rationale" not in parsed_response:
-            log.warning(f"Missing 'rationale' key in response: {parsed_response}")
+        if "breakdown" not in parsed_response:
+            log.warning(f"Missing 'breakdown' key in response: {parsed_response}")
             return {"error": RetryReason.MISSING_RATIONALE_KEY}
-        if "move" not in parsed_response:
-            log.warning(f"Missing 'move' key in response: {parsed_response}")
+        if "choice" not in parsed_response:
+            log.warning(f"Missing 'choice' key in response: {parsed_response}")
             return {"error": RetryReason.MISSING_MOVE_KEY}
 
         try:
-            move_str = parsed_response["move"].strip()
-            rationale = parsed_response.get("rationale", "No rationale provided.")
-            reasoning = parsed_response.get("reasoning", "No reasoning provided.")
+            move_str = parsed_response["choice"].strip()
+            rationale = parsed_response.get("breakdown", "No rationale provided.")
+            reasoning = parsed_response.get("analysis", "No reasoning provided.")
             if move_str == "resign" or move_str == "pass":
                 return {
                     "move": move_str,
