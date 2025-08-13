@@ -70,13 +70,13 @@ class ChessGame:
 
         if "analysis" not in parsed_response:
             log.warning(f"Missing 'analysis' key in response: {parsed_response}")
-            return {"error": RetryReason.MISSING_REASONING_KEY}
+            return {"error": RetryReason.MISSING_ANALYSIS_KEY}
         if "breakdown" not in parsed_response:
             log.warning(f"Missing 'breakdown' key in response: {parsed_response}")
-            return {"error": RetryReason.MISSING_RATIONALE_KEY}
+            return {"error": RetryReason.MISSING_BREAKDOWN_KEY}
         if "choice" not in parsed_response:
             log.warning(f"Missing 'choice' key in response: {parsed_response}")
-            return {"error": RetryReason.MISSING_MOVE_KEY}
+            return {"error": RetryReason.MISSING_CHOICE_KEY}
 
         try:
             move_str = parsed_response["choice"].strip()

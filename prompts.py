@@ -7,15 +7,13 @@ from enum import Enum
 class RetryReason(Enum):
     """Enumeration of retry reasons with custom messages."""
 
-    EMPTY_RESPONSE = (
-        "Your response was empty. Return ONLY one JSON object matching the schema."
-    )
-    INVALID_JSON = "Your output was not valid JSON or contained extra text. Return ONLY one JSON object matching the schema (no code fences, no extra text)."
-    ILLEGAL_MOVE = "Your move is illegal in the current position. Make sure you are generating a valid move."
-    MISSING_MOVE_KEY = "Your JSON is missing the required 'choice' key."
-    MISSING_RATIONALE_KEY = "Your JSON is missing the required 'breakdown' key."
-    MISSING_REASONING_KEY = "Your JSON is missing the required 'analysis' key."
-    INVALID_UCI_FORMAT = "The 'choice' value is not valid UCI. It must match ^[a-h][1-8][a-h][1-8][qrbn]?$."
+    EMPTY_RESPONSE = "empty response"
+    INVALID_JSON = "invalid response"
+    ILLEGAL_MOVE = "illegal move"
+    MISSING_CHOICE_KEY = "missing 'choice' key"
+    MISSING_BREAKDOWN_KEY = "missing 'breakdown' key"
+    MISSING_ANALYSIS_KEY = "missing 'analysis' key"
+    INVALID_UCI_FORMAT = "invalid move format"
 
 
 def board_to_ascii(board):
@@ -210,13 +208,13 @@ Valid output example:
 }
 """
 
-    if reason == RetryReason.MISSING_MOVE_KEY:
+    if reason == RetryReason.MISSING_CHOICE_KEY:
         return "Your JSON is missing the required 'choice' key. Return a JSON object with 'analysis', 'breakdown', and 'choice' keys."
 
-    if reason == RetryReason.MISSING_RATIONALE_KEY:
+    if reason == RetryReason.MISSING_BREAKDOWN_KEY:
         return "Your JSON is missing the required 'breakdown' key. Return a JSON object with 'analysis', 'breakdown', and 'choice' keys."
 
-    if reason == RetryReason.MISSING_REASONING_KEY:
+    if reason == RetryReason.MISSING_ANALYSIS_KEY:
         return "Your JSON is missing the required 'analysis' key. Return a JSON object with 'analysis', 'breakdown', and 'choice' keys."
 
     if reason == RetryReason.EMPTY_RESPONSE:
