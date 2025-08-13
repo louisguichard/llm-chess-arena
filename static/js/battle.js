@@ -16,6 +16,42 @@ document.addEventListener('DOMContentLoaded', () => {
     let whiteDisplayName = '';
     let blackDisplayName = '';
 
+		function resetForNewGame() {
+			whiteTime = 0;
+			blackTime = 0;
+			whiteCost = 0;
+			blackCost = 0;
+			turn = 'white';
+			moveRetryCount = 0;
+
+			const whiteTimeEl = document.getElementById('white-time');
+			const blackTimeEl = document.getElementById('black-time');
+			const whiteCostEl = document.getElementById('white-cost');
+			const blackCostEl = document.getElementById('black-cost');
+			if (whiteTimeEl) whiteTimeEl.textContent = '0.00s';
+			if (blackTimeEl) blackTimeEl.textContent = '0.00s';
+			if (whiteCostEl) whiteCostEl.textContent = '$0.0000';
+			if (blackCostEl) blackCostEl.textContent = '$0.0000';
+
+			const whitePanel = document.getElementById('white-panel');
+			const blackPanel = document.getElementById('black-panel');
+			if (whitePanel) whitePanel.classList.remove('ring-2', 'ring-green-500', 'shadow-lg');
+			if (blackPanel) blackPanel.classList.remove('ring-2', 'ring-green-500', 'shadow-lg');
+
+			winnerContainer.style.display = 'none';
+			winnerText.textContent = '';
+			winnerReason.textContent = '';
+
+			// Reset move history placeholders
+			const whiteMoves = document.getElementById('white-moves');
+			const blackMoves = document.getElementById('black-moves');
+			if (whiteMoves) whiteMoves.innerHTML = '<p class="text-gray-400 dark:text-gray-500 italic h-full flex items-center justify-center">Waiting for game to start...</p>';
+			if (blackMoves) blackMoves.innerHTML = '<p class="text-gray-400 dark:text-gray-500 italic h-full flex items-center justify-center">Waiting for game to start...</p>';
+
+			// Reset board to initial position
+			updateBoard('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+		}
+
     async function fetchWithRetry(url, options, retries = 3, delay = 500) {
         for (let attempt = 0; attempt <= retries; attempt++) {
             try {
@@ -28,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    form.addEventListener('submit', async (e) => {
+		form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         if (isGameRunning) {
@@ -49,10 +85,8 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Reset UI
-        winnerContainer.style.display = 'none';
-        document.getElementById('white-moves').innerHTML = '<p class="text-gray-400 dark:text-gray-500 italic h-full flex items-center justify-center">Waiting for game to start...</p>';
-        document.getElementById('black-moves').innerHTML = '<p class="text-gray-400 dark:text-gray-500 italic h-full flex items-center justify-center">Waiting for game to start...</p>';
+			// Fully reset game state and UI
+			resetForNewGame();
         
         startButton.disabled = true;
         isGameRunning = true;
