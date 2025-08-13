@@ -130,6 +130,9 @@ class RatingsTable:
         - white_time, black_time: total time spent by each player (seconds)
         - white_cost, black_cost: total cost incurred by each player (dollars)
         """
+        # Do not update ratings or stats if the game ended due to an empty response
+        if termination == "empty response":
+            return
         # Ignore very short games (aborted/opening glitches)
         total_plies = (white_moves or 0) + (black_moves or 0)
         if total_plies <= 1:
