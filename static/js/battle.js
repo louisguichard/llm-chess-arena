@@ -325,7 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Add a class to identify the last move for highlighting
         moveElement.classList.add('last-move', 'font-bold'); 
         moveElement.innerHTML = `
-            <p class="font-mono text-gray-800 dark:text-gray-200 font-bold">${gameData.move_san}</p>
+            <p class="font-mono text-gray-800 dark:text-gray-200 font-bold">${gameData.move_number}. ${gameData.move_san}</p>
             <p class="text-gray-500 dark:text-gray-400 italic text-xs break-words">${gameData.rationale}</p>
         `;
         

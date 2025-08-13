@@ -322,6 +322,7 @@ class ChessGame:
                 "reasoning": result.get("reasoning", ""),
                 "cost": fail_cost,
                 "latency": fail_latency,
+                "move_number": self.board.fullmove_number,
             }
 
         # Extract all data from the result
@@ -370,6 +371,7 @@ class ChessGame:
                 "reasoning": reasoning,
                 "cost": cost,
                 "latency": latency,
+                "move_number": self.board.fullmove_number,
             }
 
         if move == "pass":
@@ -387,10 +389,12 @@ class ChessGame:
                 "reasoning": reasoning,
                 "cost": cost,
                 "latency": latency,
+                "move_number": self.board.fullmove_number,
             }
 
         # If it is a standard move, we can make it
         san_move = self.board.san(move)
+        move_number = self.board.fullmove_number
         self.board.push(move)
         self.node = self.node.add_variation(move)
 
@@ -410,6 +414,7 @@ class ChessGame:
             "reasoning": reasoning,
             "cost": cost,
             "latency": latency,
+            "move_number": move_number,
         }
 
     def play(self, max_retries=2):
