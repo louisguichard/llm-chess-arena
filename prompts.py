@@ -158,6 +158,8 @@ def build_retry_message(reason, attempted=None, is_in_check=None):
         if attempted:
             return (
                 f"The move '{attempted}' is illegal and cannot be played in the current position.{check_message} "
+                "Verify square by square if you can move the piece from the from-square to the target square. "
+                "Be sure to check your king isn't in check after the move. "
                 "Please analyze the board again and provide a legal move in UCI format. "
                 "Return ONLY the JSON object."
             )
