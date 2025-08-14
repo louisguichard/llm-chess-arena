@@ -3,6 +3,8 @@
 import os
 import time
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 from dotenv import load_dotenv
 from logger import log
@@ -28,6 +30,17 @@ class OpenRouterClient:
     ):
         self.model = model
         self.session = requests.Session()
+        # Light retries for transient network/proxy glitches
+        retry_strategy = Retry(
+            total=2,
+            backoff_factor=1.0,
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods=frozenset(["POST"]),
+            respect_retry_after_header=True,
+        )
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        self.session.mount("https://", adapter)
+        self.session.mount("http://", adapter)
 
     def name(self):
         return self.model
@@ -37,6 +50,9 @@ class OpenRouterClient:
             headers = {
                 "Authorization": f"Bearer {OPENROUTER_API_KEY}",
                 "Content-Type": "application/json",
+                "Accept": "application/json",
+                "Accept-Encoding": "identity",
+                "Connection": "close",
             }
             start = time.time()
             if self.model == "openai/gpt-5-high":
@@ -73,6 +89,7 @@ class OpenRouterClient:
                     },
                 },
                 "usage": {"include": True},
+                "stream": False,
             }
             if self.model == "openai/gpt-5-high":  # high reasoning effort
                 payload["reasoning"] = {"effort": "high"}
