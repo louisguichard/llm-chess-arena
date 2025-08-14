@@ -16,6 +16,105 @@ document.addEventListener('DOMContentLoaded', () => {
     let whiteDisplayName = '';
     let blackDisplayName = '';
 
+    // Stockfish evaluation (minimal integration)
+    let sfWorker = null;
+    let sfReady = false;
+    const EVAL_DEPTH = 12; // increase for higher precision (slower)
+    const EVAL_MAX_CP = 1000; // centipawn cap for bar mapping
+    let lastSideToMove = 'w';
+
+    function initStockfish() {
+        function attachListeners(workerLike) {
+            if (!workerLike) return;
+            workerLike.onmessage = function(e) {
+                const msg = (e && e.data) ? String(e.data) : '';
+                if (!msg) return;
+                if (msg.indexOf('uciok') !== -1) { sfReady = true; return; }
+                if (msg.startsWith('info ') && msg.indexOf('score ') !== -1) {
+                    const s = parseScoreFromInfo(msg);
+                    if (!s) return;
+                    let cp;
+                    if (s.kind === 'cp') cp = s.value;
+                    else if (s.kind === 'mate') cp = (s.value >= 0 ? 1 : -1) * EVAL_MAX_CP;
+                    else return;
+                    const whiteCp = (lastSideToMove === 'w') ? cp : -cp;
+                    const p = cpToWhitePercent(whiteCp);
+                    setEvalBar(p);
+                }
+            };
+            try { workerLike.postMessage('uci'); } catch (e) {}
+        }
+
+        try {
+            sfWorker = new Worker('/static/js/stockfish.js');
+            attachListeners(sfWorker);
+            return;
+        } catch (e) {
+            console.warn('Worker failed, trying inline Stockfish()', e);
+        }
+
+        // Fallback: load script and use window.Stockfish()
+        try {
+            if (!window.Stockfish) {
+                const s = document.createElement('script');
+                s.src = '/static/js/stockfish.js';
+                s.onload = function() {
+                    try {
+                        sfWorker = window.Stockfish();
+                        attachListeners(sfWorker);
+                    } catch (err) {
+                        console.error('Inline Stockfish() failed:', err);
+                    }
+                };
+                document.head.appendChild(s);
+            } else {
+                sfWorker = window.Stockfish();
+                attachListeners(sfWorker);
+            }
+        } catch (e) {
+            console.error('Stockfish init failed:', e);
+        }
+    }
+
+    function parseScoreFromInfo(line) {
+        try {
+            const parts = line.split(' ');
+            const i = parts.indexOf('score');
+            if (i === -1 || i + 2 >= parts.length) return null;
+            const t = parts[i + 1];
+            const v = parseInt(parts[i + 2], 10);
+            if (t === 'cp' && !isNaN(v)) return { kind: 'cp', value: v };
+            if (t === 'mate' && !isNaN(v)) return { kind: 'mate', value: v };
+            return null;
+        } catch (e) { return null; }
+    }
+
+    function evaluateFEN(fen) {
+        if (!sfWorker) return;
+        lastSideToMove = (fen.split(' ')[1] || 'w');
+        try {
+            sfWorker.postMessage('stop');
+            sfWorker.postMessage('position fen ' + fen);
+            sfWorker.postMessage('go depth ' + EVAL_DEPTH);
+        } catch (e) {}
+    }
+
+    function cpToWhitePercent(cp) {
+        const capped = Math.max(-EVAL_MAX_CP, Math.min(EVAL_MAX_CP, cp));
+        return 50 + (capped / (2 * EVAL_MAX_CP)) * 100;
+    }
+
+    function setEvalBar(whitePercent) {
+        const w = document.getElementById('eval-white');
+        const b = document.getElementById('eval-black');
+        if (!w || !b) return;
+        const p = Math.max(0, Math.min(100, whitePercent));
+        w.style.width = p + '%';
+        b.style.width = (100 - p) + '%';
+        w.style.transition = 'width 1s linear';
+        b.style.transition = 'width 1s linear';
+    }
+
 		function resetForNewGame() {
 			whiteTime = 0;
 			blackTime = 0;
@@ -163,6 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateBoard(gameData.fen);
                 updateStats(gameData);
                 updateMoveHistory(gameData);
+                evaluateFEN(gameData.fen);
                 // Highlight based on FEN side to move
                 highlightFromFEN(gameData.fen);
                 setTimeout(playNextMove, 500);
@@ -172,6 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateBoard(gameData.fen);
                 updateStats(gameData);
                 updateMoveHistory(gameData);
+                evaluateFEN(gameData.fen);
                 // Highlight based on FEN side to move
                 highlightFromFEN(gameData.fen);
                 setTimeout(playNextMove, 500); // Wait 500ms before next move
@@ -349,4 +450,5 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     setupPlayerPanels();
+    initStockfish();
 });
