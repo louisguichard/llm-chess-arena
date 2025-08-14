@@ -313,6 +313,20 @@ class ChessGame:
             else:
                 self.black_time += fail_latency
                 self.black_cost += fail_cost
+            # Add a final move entry to moves_log so UI can show Disqualified as a move
+            disq_entry = {
+                "player": player.name(),
+                "color": "White" if self.board.turn == chess.WHITE else "Black",
+                "move_number": self.board.fullmove_number,
+                "fen_before": self.board.fen(),
+                "reasoning": result.get("reasoning", ""),
+                "rationale": result.get("rationale", result["error"].value),
+                "cost": fail_cost,
+                "latency": fail_latency,
+                "move": "Disqualified",
+            }
+            self.moves_log.append(disq_entry)
+
             self.resign(self.board.turn, result["error"].value)
             self.is_over = True
             self.save_game()
