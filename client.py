@@ -2,12 +2,13 @@
 
 import os
 import time
-import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
+import json
+import httpx
+from openai import OpenAI
 
 from dotenv import load_dotenv
 from logger import log
+from prompts import JSON_SCHEMA
 
 # Load OpenRouter API key from environment variables
 load_dotenv()
@@ -17,126 +18,90 @@ if not OPENROUTER_API_KEY:
 
 
 # Default timeouts
-CONNECT_TIMEOUT_SECONDS = 10
-READ_TIMEOUT_SECONDS = 600
+FIRST_CHUNK_TIMEOUT = 120
+NEXT_CHUNK_TIMEOUT = 60
 
 
 class OpenRouterClient:
-    """Simple OpenRouter-backed client using direct HTTP requests."""
+    """Simple OpenRouter-backed client using OpenAI SDK over OpenRouter."""
 
     def __init__(
         self,
         model,
     ):
         self.model = model
-        self.session = requests.Session()
-        # Light retries for transient network/proxy glitches
-        retry_strategy = Retry(
-            total=2,
-            backoff_factor=1.0,
-            status_forcelist=[429, 500, 502, 503, 504],
-            allowed_methods=frozenset(["POST"]),
-            respect_retry_after_header=True,
+        self.client = OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=OPENROUTER_API_KEY,
+            timeout=httpx.Timeout(
+                connect=10,  # max to establish the connection
+                read=120,  # max between different chunks
+                write=10,  # max to send data
+                pool=600,  # max lifetime of the connection
+            ),
         )
-        adapter = HTTPAdapter(max_retries=retry_strategy)
-        self.session.mount("https://", adapter)
-        self.session.mount("http://", adapter)
 
     def name(self):
         return self.model
 
     def chat(self, messages):
         try:
-            headers = {
-                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-                "Accept-Encoding": "identity",
-                "Connection": "close",
-            }
-            start = time.time()
-            if self.model == "openai/gpt-5-high":
+            extra_body = {"usage": {"include": True}}
+            if self.model == "openai/gpt-5-high":  # high reasoning effort
                 model_to_call = "openai/gpt-5"
+                extra_body["reasoning"] = {"effort": "high"}
             else:
                 model_to_call = self.model
-            payload = {
-                "model": model_to_call,
-                "messages": messages,
-                "response_format": {
-                    "type": "json_schema",
-                    "json_schema": {
-                        "name": "chess_move",
-                        "strict": True,
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "analysis": {
-                                    "type": "string",
-                                    "description": "First, think step-by-step about the position and document your thoughts here. This is your internal monologue.",
-                                },
-                                "breakdown": {
-                                    "type": "string",
-                                    "description": "Second, summarize your thinking in a short, one or two-sentence explanation for your final move choice.",
-                                },
-                                "choice": {
-                                    "type": "string",
-                                    "description": "Third, return exactly one move in UCI format from the list of legal moves.",
-                                },
-                            },
-                            "required": ["analysis", "breakdown", "choice"],
-                            "additionalProperties": False,
-                        },
-                    },
-                },
-                "usage": {"include": True},
-                "stream": False,
-            }
-            if self.model == "openai/gpt-5-high":  # high reasoning effort
-                payload["reasoning"] = {"effort": "high"}
 
-            log.info(f"Sending request to {model_to_call} - Payload: {payload}")
-            resp = self.session.post(
-                "https://openrouter.ai/api/v1/chat/completions",
-                headers=headers,
-                json=payload,
-                timeout=(CONNECT_TIMEOUT_SECONDS, READ_TIMEOUT_SECONDS),
-            )
+            log.info(f"Sending request to {model_to_call}")
+            log.debug(f"Detailed prompt sent to {model_to_call}: {messages}")
+            completion = None
+            content = None
+            start = time.time()
+            with self.client.beta.chat.completions.stream(
+                model=model_to_call,
+                messages=messages,
+                response_format={"type": "json_schema", "json_schema": JSON_SCHEMA},
+                extra_body=extra_body,
+            ) as stream:
+                try:
+                    # for _ in stream:
+                    #     pass
+                    completion = stream.get_final_completion()
+                except Exception as e:
+                    log.error(f"Error while streaming {self.model} response: {e}")
             latency = time.time() - start
-
-            try:
-                resp.raise_for_status()
-                data = resp.json()
-            except Exception as e:
-                log.error(
-                    f"Error parsing response from model: {e}\n"
-                    f"Status: {resp.status_code} {resp.reason}\n"
-                    f"URL: {resp.url}\n"
-                    f"Latency: {latency:.2f}s\n"
-                    f"Content-Type: {resp.headers.get('Content-Type')}\n"
-                    f"Headers: {dict(resp.headers)}\n"
-                    f"Body: {resp.text}"
-                )
-                return None
-            try:
-                content = data["choices"][0]["message"]["content"]
-            except Exception:
-                content = None
-
-            cost = data.get("usage", {}).get("cost") or 0
-            upstream_cost = (
-                data.get("usage", {})
-                .get("cost_details", {})
-                .get("upstream_inference_cost")
-                or 0
-            )
-            total_cost = cost + upstream_cost
-            log.info(
-                f"Received response from {self.model} - Cost: {total_cost:.3f}€ (including {upstream_cost:.3f}€ upstream) - Latency: {latency:.1f}s - Content: {content}"
-            )
-
-            return {"completion": data, "cost": total_cost, "latency": latency}
+            if completion:
+                try:
+                    content = json.loads(completion.choices[0].message.content)
+                except Exception as e:
+                    log.error(
+                        f"Error parsing response from {self.model}: {e} - Completion: {completion}"
+                    )
+                if content:
+                    try:
+                        cost = completion.usage.cost
+                        upstream_cost = (
+                            completion.usage.cost_details.get("upstream_inference_cost")
+                            or 0
+                        )
+                        total_cost = cost + upstream_cost
+                    except Exception as e:
+                        log.error(f"Error getting cost from {self.model}: {e}")
+                        total_cost, upstream_cost = 0, 0
+                    move = content.get("choice")
+                    log.info(
+                        f"Received response from {self.model} - Cost: {total_cost:.3f}€ (including {upstream_cost:.3f}€ upstream) - Latency: {latency:.1f}s - Move: {move}"
+                    )
+                    log.debug(f"Detailed response from {self.model}: {content}")
+                    return {
+                        "completion": content,
+                        "cost": total_cost,
+                        "latency": latency,
+                    }
+                else:
+                    log.warning(f"No content received from {self.model}")
+                    return None
         except Exception as e:
-            log.error(
-                f"Error getting response from {self.model}: {type(e).__name__} - {e}"
-            )
+            log.error(f"Error getting response from {self.model}: {e}")
             return None

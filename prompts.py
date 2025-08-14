@@ -4,6 +4,31 @@ import chess
 from enum import Enum
 
 
+JSON_SCHEMA = {
+    "name": "chess_move",
+    "strict": True,
+    "schema": {
+        "type": "object",
+        "properties": {
+            "analysis": {
+                "type": "string",
+                "description": "First, think step-by-step about the position and document your thoughts here. This is your internal monologue.",
+            },
+            "breakdown": {
+                "type": "string",
+                "description": "Second, summarize your thinking in a short, one or two-sentence explanation for your final move choice.",
+            },
+            "choice": {
+                "type": "string",
+                "description": "Third, return exactly one move in UCI format from the list of legal moves.",
+            },
+        },
+        "required": ["analysis", "breakdown", "choice"],
+        "additionalProperties": False,
+    },
+}
+
+
 class RetryReason(Enum):
     """Enumeration of retry reasons with custom messages."""
 

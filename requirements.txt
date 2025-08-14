@@ -1,8 +1,8 @@
 python-chess
-requests
 python-dotenv
 Flask
 gunicorn
 google-cloud-aiplatform
 google-cloud-storage
 google-cloud-logging
+openai
