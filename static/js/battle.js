@@ -207,8 +207,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (state.is_over) {
             const result = state.result;
+            const termination = state.termination || '';
             const whiteName = whiteDisplayName || "White";
             const blackName = blackDisplayName || "Black";
+
+            if (termination === 'No response from the model.') {
+                winnerText.innerHTML = `<strong class="text-black dark:text-gray-100">Game canceled.</strong> Match canceled due to no response.`;
+                winnerContainer.style.display = 'block';
+                isGameRunning = false;
+                startButton.disabled = false;
+                return;
+            }
             if (result === '1-0') {
                 winnerText.innerHTML = `<strong class="text-black dark:text-gray-100">Game over!</strong> <span class="text-green-600 dark:text-green-400 font-semibold">${whiteName}</span> <span class="text-black dark:text-gray-100">won against</span> <span class="text-red-600 dark:text-red-400 font-semibold">${blackName}</span>`;
             } else if (result === '0-1') {
