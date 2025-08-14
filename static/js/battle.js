@@ -358,7 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function resyncState() {
         if (!gameId) return;
         try {
-            const resp = await fetch(`/api/game/${gameId}`);
+            const resp = await fetch(`/api/game/${gameId}?ts=${Date.now()}`, { cache: 'no-store' });
             if (!resp.ok) return;
             const state = await resp.json();
             if (!state) return;

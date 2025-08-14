@@ -209,7 +209,11 @@ def get_game_state(game_id):
         "black_cost": game.black_cost,
         "moves": game.moves_log,
     }
-    return jsonify(state)
+    response = jsonify(state)
+    # Prevent caches from serving stale game state
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    return response
 
 
 if __name__ == "__main__":
