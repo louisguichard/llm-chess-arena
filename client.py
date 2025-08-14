@@ -86,11 +86,19 @@ class OpenRouterClient:
             )
             latency = time.time() - start
 
-            resp.raise_for_status()
             try:
+                resp.raise_for_status()
                 data = resp.json()
-            except Exception:
-                log.error("Error parsing response from the model.")
+            except Exception as e:
+                log.error(
+                    f"Error parsing response from model: {e}\n"
+                    f"Status: {resp.status_code} {resp.reason}\n"
+                    f"URL: {resp.url}\n"
+                    f"Latency: {latency:.2f}s\n"
+                    f"Content-Type: {resp.headers.get('Content-Type')}\n"
+                    f"Headers: {dict(resp.headers)}\n"
+                    f"Body: {resp.text}"
+                )
                 return None
             try:
                 content = data["choices"][0]["message"]["content"]
