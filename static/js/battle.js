@@ -24,6 +24,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const EVAL_DEPTH = 12; // increase for higher precision (slower)
     const EVAL_MAX_CP = 1000; // centipawn cap for bar mapping
     let lastSideToMove = 'w';
+    let lastEvaluatedFEN = '';
+    let evalTimer = null;
 
     function initStockfish() {
         function attachListeners(workerLike) {
@@ -31,7 +33,11 @@ document.addEventListener('DOMContentLoaded', () => {
             workerLike.onmessage = function(e) {
                 const msg = (e && e.data) ? String(e.data) : '';
                 if (!msg) return;
-                if (msg.indexOf('uciok') !== -1) { sfReady = true; return; }
+                if (msg.indexOf('uciok') !== -1) {
+                    sfReady = true;
+                    try { workerLike.postMessage('setoption name Threads value 1'); } catch (err) {}
+                    return;
+                }
                 if (msg.startsWith('info ') && msg.indexOf('score ') !== -1) {
                     const s = parseScoreFromInfo(msg);
                     if (!s) return;
@@ -49,33 +55,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             sfWorker = new Worker('/static/js/stockfish.js');
+            sfWorker.onerror = function(err) {
+                try { sfWorker.terminate(); } catch (e2) {}
+                sfWorker = null;
+                loadCdnInline();
+            };
             attachListeners(sfWorker);
             return;
         } catch (e) {
             console.warn('Worker failed, trying inline Stockfish()', e);
         }
 
-        // Fallback: load script and use window.Stockfish()
-        try {
-            if (!window.Stockfish) {
-                const s = document.createElement('script');
-                s.src = '/static/js/stockfish.js';
-                s.onload = function() {
-                    try {
-                        sfWorker = window.Stockfish();
-                        attachListeners(sfWorker);
-                    } catch (err) {
-                        console.error('Inline Stockfish() failed:', err);
-                    }
-                };
-                document.head.appendChild(s);
-            } else {
-                sfWorker = window.Stockfish();
-                attachListeners(sfWorker);
+        function loadCdnInline() {
+            try {
+                if (!window.Stockfish) {
+                    const s = document.createElement('script');
+                    s.src = 'https://cdn.jsdelivr.net/npm/stockfish@16/stockfish.js';
+                    s.onload = function() {
+                        try {
+                            sfWorker = window.Stockfish();
+                            attachListeners(sfWorker);
+                        } catch (err) {
+                            console.error('Inline Stockfish() failed:', err);
+                        }
+                    };
+                    s.onerror = function() {
+                        console.error('Failed to load Stockfish from CDN');
+                    };
+                    document.head.appendChild(s);
+                } else {
+                    sfWorker = window.Stockfish();
+                    attachListeners(sfWorker);
+                }
+            } catch (e) {
+                console.error('Stockfish init failed:', e);
             }
-        } catch (e) {
-            console.error('Stockfish init failed:', e);
         }
+
+        // Fallback: load script from CDN and use window.Stockfish()
+        loadCdnInline();
     }
 
     function parseScoreFromInfo(line) {
@@ -92,13 +110,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function evaluateFEN(fen) {
-        if (!sfWorker) return;
+        if (!sfWorker || !sfReady) return;
         lastSideToMove = (fen.split(' ')[1] || 'w');
         try {
-            sfWorker.postMessage('stop');
             sfWorker.postMessage('position fen ' + fen);
             sfWorker.postMessage('go depth ' + EVAL_DEPTH);
         } catch (e) {}
+    }
+
+    function scheduleEvaluation(fen) {
+        if (!fen || fen === lastEvaluatedFEN) return;
+        lastEvaluatedFEN = fen;
+        if (evalTimer) {
+            clearTimeout(evalTimer);
+            evalTimer = null;
+        }
+        evalTimer = setTimeout(function() {
+            evaluateFEN(fen);
+        }, 250);
     }
 
     function cpToWhitePercent(cp) {
@@ -186,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!state) return;
         try {
             updateBoard(state.fen);
-            evaluateFEN(state.fen);
+            scheduleEvaluation(state.fen);
             highlightFromFEN(state.fen);
         } catch (e) {}
 
@@ -213,6 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (termination === 'No response from the model.') {
                 winnerText.innerHTML = `<strong class="text-black dark:text-gray-100">Game canceled.</strong> Match canceled due to no response.`;
+                if (winnerReason) winnerReason.textContent = termination;
                 winnerContainer.style.display = 'block';
                 isGameRunning = false;
                 startButton.disabled = false;
@@ -225,6 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 winnerText.innerHTML = `<strong class="text-black dark:text-gray-100">Game over!</strong> Draw between ${whiteName} and ${blackName}`;
             }
+            if (winnerReason) winnerReason.textContent = termination || '';
             winnerContainer.style.display = 'block';
             isGameRunning = false;
             startButton.disabled = false;
@@ -243,7 +274,12 @@ document.addEventListener('DOMContentLoaded', () => {
         function createMoveElement(m) {
             const moveDiv = document.createElement('div');
             const mv = m.move || {};
-            const moveText = (mv.uci || mv.san || '');
+            let moveText = '';
+            if (typeof mv === 'string') {
+                moveText = mv;
+            } else {
+                moveText = (mv.uci || mv.san || '');
+            }
             moveDiv.innerHTML = `
                 <p class="font-mono text-gray-800 dark:text-gray-200 font-bold">${m.move_number}. ${moveText}</p>
                 <p class="text-gray-500 dark:text-gray-400 italic text-xs break-words">${m.rationale || ''}</p>
