@@ -6,13 +6,16 @@ from flask import (
     render_template,
     jsonify,
     request,
+    Response,
 )
+from flask import stream_with_context
 from utils import read_models_from_file
 from ratings import RatingsTable
 from match import ChessGame
 from client import OpenRouterClient
 import traceback
 from logger import log
+import json
 import uuid
 
 app = Flask(__name__)
@@ -121,7 +124,13 @@ def start_game():
     )
 
     game_id = str(uuid.uuid4())
-    games[game_id] = {"game": game, "lock": threading.Lock()}
+    # On stocke aussi une condition et un compteur "version" pour réveiller les clients SSE
+    games[game_id] = {
+        "game": game,
+        "lock": threading.Lock(),
+        "cond": threading.Condition(),
+        "version": 0,
+    }
     log.info(f"Started new game: {game_id}")
 
     return jsonify({"game_id": game_id})
@@ -135,6 +144,7 @@ def play_move(game_id):
 
     game = entry["game"]
     lock = entry["lock"]
+    cond = entry["cond"]
 
     try:
         with lock:
@@ -176,8 +186,17 @@ def play_move(game_id):
                 # The game is over, but we send the last move to the client
                 # The client will then make one more request, and the game.is_over check at the top
                 # will catch it and return the final game over state.
+                with cond:
+                    entry["version"] += 1
+                    cond.notify_all()
+                with cond:
+                    entry["version"] += 1
+                    cond.notify_all()
                 return jsonify(move_result)
 
+            with cond:
+                entry["version"] += 1
+                cond.notify_all()
             return jsonify(move_result)
 
     except Exception as e:
@@ -213,6 +232,53 @@ def get_game_state(game_id):
     # Prevent caches from serving stale game state
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     response.headers["Pragma"] = "no-cache"
+    return response
+
+
+@app.route("/api/stream/<game_id>", methods=["GET"])
+def stream_game_state(game_id):
+    entry = games.get(game_id)
+    if not entry:
+        return jsonify({"error": "Game not found."}), 404
+    cond = entry["cond"]
+
+    def build_state():
+        game = entry["game"]
+        return {
+            "game_id": game_id,
+            "is_over": game.is_over,
+            "fen": game.board.fen(),
+            "result": game.game.headers.get("Result"),
+            "termination": game.game.headers.get("Termination"),
+            "white_time": game.white_time,
+            "black_time": game.black_time,
+            "white_cost": game.white_cost,
+            "black_cost": game.black_cost,
+            "moves": game.moves_log,
+        }
+
+    def sse(event, data):
+        return f"event: {event}\ndata: {json.dumps(data)}\n\n"
+
+    @stream_with_context
+    def event_stream():
+        last_version = -1
+        yield sse("state", build_state())
+        last_version = entry.get("version", 0)
+        while True:
+            with cond:
+                cond.wait(timeout=15)
+                current_version = entry.get("version", 0)
+            if current_version != last_version:
+                last_version = current_version
+                yield sse("state", build_state())
+            else:
+                yield sse("ping", {})
+
+    response = Response(event_stream(), mimetype="text/event-stream")
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["X-Accel-Buffering"] = "no"
+    response.headers["Connection"] = "keep-alive"
     return response
 
 

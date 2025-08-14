@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let whiteDisplayName = '';
     let blackDisplayName = '';
     let isOffline = !navigator.onLine;
+    let eventSource = null;
 
     // Stockfish evaluation (minimal integration)
     let sfWorker = null;
@@ -117,6 +118,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 		function resetForNewGame() {
+			if (eventSource) {
+				try { eventSource.close(); } catch (e) {}
+				eventSource = null;
+			}
 			whiteTime = 0;
 			blackTime = 0;
 			whiteCost = 0;
@@ -299,6 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             gameId = data.game_id;
             highlightCurrentPlayer();
+            openEventStream();
             playNextMove();
 
         } catch (error) {
@@ -352,6 +358,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (isGameRunning) playNextMove();
             }, backoff);
             resyncState();
+        }
+    }
+
+    function openEventStream() {
+        if (!gameId) return;
+        try {
+            if (eventSource) { try { eventSource.close(); } catch (e) {} }
+            eventSource = new EventSource(`/api/stream/${gameId}?ts=${Date.now()}`);
+            eventSource.addEventListener('state', (evt) => {
+                try {
+                    const state = JSON.parse(evt.data);
+                    applyServerState(state);
+                } catch (e) {}
+            });
+            eventSource.addEventListener('ping', () => {});
+            eventSource.onerror = () => {
+                try { eventSource.close(); } catch (e) {}
+                eventSource = null;
+                if (isGameRunning) setTimeout(openEventStream, 1000);
+            };
+        } catch (e) {
+            // Fallback to polling-only
         }
     }
 
