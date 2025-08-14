@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let moveRetryCount = 0;
     let whiteDisplayName = '';
     let blackDisplayName = '';
+    let isOffline = !navigator.onLine;
 
     // Stockfish evaluation (minimal integration)
     let sfWorker = null;
@@ -154,13 +155,102 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchWithRetry(url, options, retries = 3, delay = 500) {
         for (let attempt = 0; attempt <= retries; attempt++) {
             try {
-                return await fetch(url, options);
+                const resp = await fetch(url, options);
+                if (!resp.ok) {
+                    throw new Error('HTTP ' + resp.status);
+                }
+                return resp;
             } catch (err) {
                 if (attempt === retries) throw err;
                 const backoff = delay * Math.pow(2, attempt);
                 await new Promise(r => setTimeout(r, backoff));
             }
         }
+    }
+
+    window.addEventListener('offline', () => {
+        isOffline = true;
+    });
+    window.addEventListener('online', () => {
+        isOffline = false;
+        resyncState();
+        if (isGameRunning) playNextMove();
+    });
+
+    function applyServerState(state) {
+        if (!state) return;
+        try {
+            updateBoard(state.fen);
+            evaluateFEN(state.fen);
+            highlightFromFEN(state.fen);
+        } catch (e) {}
+
+        whiteTime = state.white_time || 0;
+        blackTime = state.black_time || 0;
+        whiteCost = state.white_cost || 0;
+        blackCost = state.black_cost || 0;
+        const wt = document.getElementById('white-time');
+        const bt = document.getElementById('black-time');
+        const wc = document.getElementById('white-cost');
+        const bc = document.getElementById('black-cost');
+        if (wt) wt.textContent = `${whiteTime.toFixed(2)}s`;
+        if (bt) bt.textContent = `${blackTime.toFixed(2)}s`;
+        if (wc) wc.textContent = `$${whiteCost.toFixed(4)}`;
+        if (bc) bc.textContent = `$${blackCost.toFixed(4)}`;
+
+        rebuildMoveHistory(Array.isArray(state.moves) ? state.moves : []);
+
+        if (state.is_over) {
+            const result = state.result;
+            const whiteName = whiteDisplayName || "White";
+            const blackName = blackDisplayName || "Black";
+            if (result === '1-0') {
+                winnerText.innerHTML = `<strong class="text-black dark:text-gray-100">Game over!</strong> <span class="text-green-600 dark:text-green-400 font-semibold">${whiteName}</span> <span class="text-black dark:text-gray-100">won against</span> <span class="text-red-600 dark:text-red-400 font-semibold">${blackName}</span>`;
+            } else if (result === '0-1') {
+                winnerText.innerHTML = `<strong class="text-black dark:text-gray-100">Game over!</strong> <span class="text-green-600 dark:text-green-400 font-semibold">${blackName}</span> <span class="text-black dark:text-gray-100">won against</span> <span class="text-red-600 dark:text-red-400 font-semibold">${whiteName}</span>`;
+            } else {
+                winnerText.innerHTML = `<strong class="text-black dark:text-gray-100">Game over!</strong> Draw between ${whiteName} and ${blackName}`;
+            }
+            winnerContainer.style.display = 'block';
+            isGameRunning = false;
+            startButton.disabled = false;
+        }
+    }
+
+    function rebuildMoveHistory(moves) {
+        const whiteContainer = document.getElementById('white-moves');
+        const blackContainer = document.getElementById('black-moves');
+        if (!whiteContainer || !blackContainer) return;
+        whiteContainer.innerHTML = '';
+        blackContainer.innerHTML = '';
+
+        const elementsByColor = { white: [], black: [] };
+
+        function createMoveElement(m) {
+            const moveDiv = document.createElement('div');
+            const mv = m.move || {};
+            const moveText = (mv.uci || mv.san || '');
+            moveDiv.innerHTML = `
+                <p class="font-mono text-gray-800 dark:text-gray-200 font-bold">${m.move_number}. ${moveText}</p>
+                <p class="text-gray-500 dark:text-gray-400 italic text-xs break-words">${m.rationale || ''}</p>
+            `;
+            return moveDiv;
+        }
+
+        (moves || []).forEach(m => {
+            const colorLower = (m.color || '').toString().toLowerCase();
+            const key = colorLower === 'white' ? 'white' : (colorLower === 'black' ? 'black' : 'white');
+            elementsByColor[key].push(createMoveElement(m));
+        });
+
+        // Newest at top, highlight the last move for each color
+        ['white', 'black'].forEach(key => {
+            const container = key === 'white' ? whiteContainer : blackContainer;
+            const list = elementsByColor[key];
+            list.forEach(el => container.prepend(el));
+            const last = container.querySelector('div');
+            if (last) last.classList.add('last-move', 'font-bold');
+        });
     }
 
 		form.addEventListener('submit', async (e) => {
@@ -221,7 +311,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     async function playNextMove() {
-        if (!gameId) return;
+        if (!gameId || !isGameRunning) return;
+        if (isOffline) {
+            setTimeout(playNextMove, 1000);
+            return;
+        }
 
         try {
             const response = await fetchWithRetry(`/api/play_move/${gameId}`, {
@@ -229,6 +323,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 5, 300);
 
             const gameData = await response.json();
+
+            if (!gameData) {
+                await resyncState();
+                if (isGameRunning) setTimeout(playNextMove, 500);
+                return;
+            }
 
             if (gameData.error) {
                 const msg = gameData.details || gameData.error || 'Unknown error';
@@ -240,51 +340,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            if (gameData.status === "game_over") {
-                const result = gameData.result;
-                const whiteName = whiteDisplayName || "White";
-                const blackName = blackDisplayName || "Black";
-                if (result === '1-0') {
-                    winnerText.innerHTML = `<strong class="text-black dark:text-gray-100">Game over!</strong> <span class="text-green-600 dark:text-green-400 font-semibold">${whiteName}</span> <span class="text-black dark:text-gray-100">won against</span> <span class="text-red-600 dark:text-red-400 font-semibold">${blackName}</span>`;
-                } else if (result === '0-1') {
-                    winnerText.innerHTML = `<strong class="text-black dark:text-gray-100">Game over!</strong> <span class="text-green-600 dark:text-green-400 font-semibold">${blackName}</span> <span class="text-black dark:text-gray-100">won against</span> <span class="text-red-600 dark:text-red-400 font-semibold">${whiteName}</span>`;
-                } else {
-                    winnerText.innerHTML = `<strong class="text-black dark:text-gray-100">Game over!</strong> Draw between ${whiteName} and ${blackName}`;
-                }
-                winnerContainer.style.display = 'block';
-                isGameRunning = false;
-                startButton.disabled = false;
-                return
-            }
-
-            if (gameData.is_over) {
-                // Last move played, UI is updated, then the game truly ends.
-                updateBoard(gameData.fen);
-                updateStats(gameData);
-                updateMoveHistory(gameData);
-                evaluateFEN(gameData.fen);
-                // Highlight based on FEN side to move
-                highlightFromFEN(gameData.fen);
-                setTimeout(playNextMove, 500);
-
-            } else if (gameData.status === 'success') {
-                moveRetryCount = 0;
-                updateBoard(gameData.fen);
-                updateStats(gameData);
-                updateMoveHistory(gameData);
-                evaluateFEN(gameData.fen);
-                // Highlight based on FEN side to move
-                highlightFromFEN(gameData.fen);
-                setTimeout(playNextMove, 500); // Wait 500ms before next move
-            }
+            // Simplify: always resync from authoritative server state
+            moveRetryCount = 0;
+            await resyncState();
+            if (isGameRunning) setTimeout(playNextMove, 500);
         } catch (err) {
             console.error('Network error during move, will retry:', err);
-            // Exponential backoff up to ~10s
             moveRetryCount += 1;
             const backoff = Math.min(10000, 500 * Math.pow(2, moveRetryCount - 1));
             setTimeout(() => {
                 if (isGameRunning) playNextMove();
             }, backoff);
+            resyncState();
+        }
+    }
+
+    async function resyncState() {
+        if (!gameId) return;
+        try {
+            const resp = await fetch(`/api/game/${gameId}`);
+            if (!resp.ok) return;
+            const state = await resp.json();
+            if (!state) return;
+            applyServerState(state);
+        } catch (e) {
+            // Ignore; we'll retry on the next loop
         }
     }
 
