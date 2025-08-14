@@ -8,6 +8,19 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+class ExcludeStaticFilter(logging.Filter):
+    """Filter out noisy access logs for static assets and favicon."""
+
+    def filter(self, record):
+        try:
+            msg = record.getMessage()
+        except Exception:
+            msg = str(getattr(record, "msg", ""))
+        if not msg:
+            return True
+        return "/static/" not in msg and "favicon.ico" not in msg
+
+
 def setup_logger():
     """Set up the logger."""
     logger = logging.getLogger("llm-chess-arena")
@@ -24,6 +37,11 @@ def setup_logger():
             logging.basicConfig(level=logging.DEBUG)
 
     logger.setLevel(logging.DEBUG)
+
+    # Suppress common access logs for static files
+    static_filter = ExcludeStaticFilter()
+    for name in ("werkzeug", "gunicorn.access"):
+        logging.getLogger(name).addFilter(static_filter)
     return logger
 
 
