@@ -83,7 +83,7 @@ Output format:
 - Return your decision as ONE JSON object with keys in this exact order: `analysis`, `breakdown`, `choice`.
 - `analysis`: Your detailed internal analysis (step-by-step). Include candidate moves considered, concrete lines and detailed checks for legality.
 - `breakdown`: A brief 1–2 sentence summary of why the chosen move is best.
-- `choice`: Exactly one UCI move (e.g., "e2e4", "e7e8q"), or "resign" if checkmated, or "pass" only if the position is a stalemate.
+- `choice`: Exactly one UCI move (e.g., "e2e4", "e7e8q"), or "resign" if checkmated.
 
 Example response:
 {"analysis": "Opponent just played Nf6, developing and increasing control over e4 and g4. Threat scan: no direct threat against my king now, but ...Nxe4 could become possible if I neglect the center; also ...Bb4+ might be annoying after Nc3. Candidate checks/captures/forcing: 1) d2d4 (strike the center), 2) c2c4 (space, but concedes d4), 3) g1f3 (develop, defend e5/d4 squares), 4) c1g5 (? pin idea). First I consider c1g5 to pin the knight. Legality/path check for c1g5: squares d2, e3, f4 must be empty and g5 must be empty or hold an opponent piece; that is satisfied here, but after ...Ne4 and ...Bb4+ tactics my bishop may be misplaced and it doesn’t contest the center. Next I consider e2e4 to seize space; legality check: e2 to e4 is a two-step pawn push from the starting rank, so e3 must be empty and e4 must be empty. That is true here, but tactically ...Nxe4 might follow; safer is central tension first. Now d2d4: legality check: path is clear (d3 empty), destination d4 empty; it challenges the center, opens my c1-bishop, and blunts ...Nxe4 because d4xe5 gains time if Black captures. Calculate key lines: 1.d2d4 exd4 2.g1f3 Nc6 3.c2c3 with a solid center; or 1...Nxe4 2.d4e5 (illegal, correction: capture notation must be d4xe5; the UCI string is d4e5 if legal). Re-check: after 1.d2d4, ...Nxe4 loses a central pawn after d4xe5 with tempo; king safety is fine. Final legality check: d2d4 is legal and correctly formatted in UCI. Conclude d2d4.", "breakdown": "Challenge the center, improve piece activity, and reduce Black’s ...Nxe4 ideas while keeping king safety.", "choice": "d2d4"}
@@ -92,7 +92,6 @@ Hard rules:
 - Output ONLY the JSON object. No code fences, no text before or after the JSON.
 - The `choice` MUST be legal in the current position and in UCI format.
 - If you are checkmated: {"analysis": "...", "breakdown": "...", "choice": "resign"}
-- If the game is a stalemate: {"analysis": "...", "breakdown": "...", "choice": "pass"}
 - Always consider the opponent’s last move and ensure your king is not in check."""
 
 

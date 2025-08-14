@@ -79,7 +79,7 @@ class ChessGame:
             move_str = parsed_response["choice"].strip()
             rationale = parsed_response.get("breakdown", "No rationale provided.")
             reasoning = parsed_response.get("analysis", "No reasoning provided.")
-            if move_str == "resign" or move_str == "pass":
+            if move_str == "resign":
                 return {
                     "move": move_str,
                     "rationale": rationale,
@@ -185,11 +185,7 @@ class ChessGame:
                     else:
                         error_reason = RetryReason.ILLEGAL_MOVE
                 # Check if move is legal
-                if (
-                    move == "resign"
-                    or (move == "pass" and self.board.is_stalemate())
-                    or move in self.board.legal_moves
-                ):
+                if move == "resign" or move in self.board.legal_moves:
                     return {
                         "move": move,
                         "rationale": result.get("rationale"),
@@ -376,25 +372,6 @@ class ChessGame:
                 "move_san": "resign",
                 "fen": self.board.fen(),
                 "is_over": self.is_over,
-                "result": self.game.headers.get("Result"),
-                "color": mover_color,
-                "rationale": rationale,
-                "reasoning": reasoning,
-                "cost": cost,
-                "latency": latency,
-                "move_number": self.board.fullmove_number,
-            }
-
-        if move == "pass":
-            # Stalemate acknowledgment without pushing a move
-            self.is_over = True
-            self.determine_game_result()
-            self.save_game()
-            return {
-                "status": "success",
-                "move_san": "pass",
-                "fen": self.board.fen(),
-                "is_over": True,
                 "result": self.game.headers.get("Result"),
                 "color": mover_color,
                 "rationale": rationale,
