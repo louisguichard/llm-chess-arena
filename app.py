@@ -131,7 +131,7 @@ def start_game():
         "cond": threading.Condition(),
         "version": 0,
     }
-    log.info(f"Started new game: {game_id}")
+    log.info(f"Starting new game: {white_model} vs. {black_model} (ID: {game_id})")
 
     return jsonify({"game_id": game_id})
 

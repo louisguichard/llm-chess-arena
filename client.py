@@ -46,7 +46,10 @@ class OpenRouterClient:
 
     def chat(self, messages):
         try:
-            extra_body = {"usage": {"include": True}}
+            extra_body = {
+                "usage": {"include": True},
+                # "provider": {"require_parameters": True},
+            }
             if self.model == "openai/gpt-5-high":  # high reasoning effort
                 model_to_call = "openai/gpt-5"
                 extra_body["reasoning"] = {"effort": "high"}
@@ -73,7 +76,7 @@ class OpenRouterClient:
             latency = time.time() - start
             if completion:
                 try:
-                    content = json.loads(completion.choices[0].message.content)
+                    content = completion.choices[0].message.content
                 except Exception as e:
                     log.error(
                         f"Error parsing response from {self.model}: {e} - Completion: {completion}"
@@ -89,7 +92,7 @@ class OpenRouterClient:
                     except Exception as e:
                         log.error(f"Error getting cost from {self.model}: {e}")
                         total_cost, upstream_cost = 0, 0
-                    move = content.get("choice")
+                    move = json.loads(content).get("choice")
                     log.info(
                         f"Received response from {self.model} - Cost: {total_cost:.3f}€ (including {upstream_cost:.3f}€ upstream) - Latency: {latency:.1f}s - Move: {move}"
                     )
@@ -101,6 +104,7 @@ class OpenRouterClient:
                     }
                 else:
                     log.warning(f"No content received from {self.model}")
+                    log.debug(f"Completion: {completion}")
                     return None
         except Exception as e:
             log.error(f"Error getting response from {self.model}: {e}")

@@ -5,6 +5,7 @@ import time
 
 import chess
 import chess.pgn
+import json
 from prompts import (
     SYSTEM_PROMPT,
     build_user_prompt,
@@ -57,21 +58,26 @@ class ChessGame:
         """
         if not response:
             return {"error": RetryReason.EMPTY_RESPONSE}
+        try:
+            parsed_response = json.loads(response)
+        except json.JSONDecodeError:
+            log.warning(f"Error parsing response: {response}")
+            return {"error": RetryReason.INVALID_JSON}
 
-        if "analysis" not in response:
-            log.warning(f"Missing 'analysis' key in response: {response}")
+        if "analysis" not in parsed_response:
+            log.warning(f"Missing 'analysis' key in response: {parsed_response}")
             return {"error": RetryReason.MISSING_ANALYSIS_KEY}
-        if "breakdown" not in response:
-            log.warning(f"Missing 'breakdown' key in response: {response}")
+        if "breakdown" not in parsed_response:
+            log.warning(f"Missing 'breakdown' key in response: {parsed_response}")
             return {"error": RetryReason.MISSING_BREAKDOWN_KEY}
-        if "choice" not in response:
-            log.warning(f"Missing 'choice' key in response: {response}")
+        if "choice" not in parsed_response:
+            log.warning(f"Missing 'choice' key in response: {parsed_response}")
             return {"error": RetryReason.MISSING_CHOICE_KEY}
 
         try:
-            move_str = response["choice"].strip()
-            rationale = response.get("breakdown", "No rationale provided.")
-            reasoning = response.get("analysis", "No reasoning provided.")
+            move_str = parsed_response["choice"].strip()
+            rationale = parsed_response.get("breakdown", "No rationale provided.")
+            reasoning = parsed_response.get("analysis", "No reasoning provided.")
             if move_str == "resign":
                 return {
                     "move": move_str,
@@ -147,7 +153,7 @@ class ChessGame:
             total_cost += cost
             total_latency += latency
             if completion:
-                messages.append({"role": "assistant", "content": str(completion)})
+                messages.append({"role": "assistant", "content": completion})
             else:
                 log.warning(f"⚠️ Empty response from {player.name()}")
                 error_reason = RetryReason.EMPTY_RESPONSE
