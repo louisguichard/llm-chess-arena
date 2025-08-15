@@ -5,4 +5,4 @@ gunicorn
 google-cloud-aiplatform
 google-cloud-storage
 google-cloud-logging
-openai
+openai==1.99.9

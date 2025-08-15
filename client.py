@@ -61,51 +61,47 @@ class OpenRouterClient:
             completion = None
             content = None
             start = time.time()
-            with self.client.beta.chat.completions.stream(
+            stream = self.client.chat.completions.create(
                 model=model_to_call,
                 messages=messages,
                 response_format={"type": "json_schema", "json_schema": JSON_SCHEMA},
                 extra_body=extra_body,
-            ) as stream:
-                try:
-                    # for _ in stream:
-                    #     pass
-                    completion = stream.get_final_completion()
-                except Exception as e:
-                    log.error(f"Error while streaming {self.model} response: {e}")
+                stream=True,
+            )
+            content = []
+            for i, chunk in enumerate(stream):
+                if i < 3 or i % 1000 == 0:
+                    log.debug(f"Chunk {i}: {chunk}")
+                content.append(chunk.choices[0].delta.content)
+            content = "".join(content)
+            log.debug(f"Final content: {content}")
             latency = time.time() - start
-            if completion:
-                try:
-                    content = completion.choices[0].message.content
-                except Exception as e:
-                    log.error(
-                        f"Error parsing response from {self.model}: {e} - Completion: {completion}"
-                    )
-                if content:
-                    try:
-                        cost = completion.usage.cost
-                        upstream_cost = (
-                            completion.usage.cost_details.get("upstream_inference_cost")
-                            or 0
-                        )
-                        total_cost = cost + upstream_cost
-                    except Exception as e:
-                        log.error(f"Error getting cost from {self.model}: {e}")
-                        total_cost, upstream_cost = 0, 0
-                    move = json.loads(content).get("choice")
-                    log.info(
-                        f"Received response from {self.model} - Cost: {total_cost:.3f}€ (including {upstream_cost:.3f}€ upstream) - Latency: {latency:.1f}s - Move: {move}"
-                    )
-                    log.debug(f"Detailed response from {self.model}: {content}")
-                    return {
-                        "completion": content,
-                        "cost": total_cost,
-                        "latency": latency,
-                    }
-                else:
-                    log.warning(f"No content received from {self.model}")
-                    log.debug(f"Completion: {completion}")
-                    return None
+            try:
+                # Cost should be in the last chunk
+                cost = chunk.usage.cost
+                upstream_cost = (
+                    chunk.usage.cost_details.get("upstream_inference_cost") or 0
+                )
+                total_cost = cost + upstream_cost
+            except Exception as e:
+                log.error(f"Error getting cost from {self.model}: {e}")
+                log.debug(f"Last chunk: {chunk}")
+                total_cost, upstream_cost = 0, 0
+            if content:
+                move = json.loads(content).get("choice")
+                log.info(
+                    f"Received response from {self.model} - Cost: {total_cost:.3f}€ (including {upstream_cost:.3f}€ upstream) - Latency: {latency:.1f}s - Move: {move}"
+                )
+                log.debug(f"Detailed response from {self.model}: {content}")
+                return {
+                    "completion": content,
+                    "cost": total_cost,
+                    "latency": latency,
+                }
+            else:
+                log.warning(f"No content received from {self.model}")
+                log.debug(f"Completion: {completion}")
+                return None
         except Exception as e:
             log.error(f"Error getting response from {self.model}: {e}")
             return None
