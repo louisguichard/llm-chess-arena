@@ -17,11 +17,6 @@ if not OPENROUTER_API_KEY:
     raise RuntimeError("OPENROUTER_API_KEY not found in environment variables")
 
 
-# Default timeouts
-FIRST_CHUNK_TIMEOUT = 120
-NEXT_CHUNK_TIMEOUT = 60
-
-
 class OpenRouterClient:
     """Simple OpenRouter-backed client using OpenAI SDK over OpenRouter."""
 
@@ -48,7 +43,7 @@ class OpenRouterClient:
         try:
             extra_body = {
                 "usage": {"include": True},
-                # "provider": {"require_parameters": True},
+                "provider": {"require_parameters": True},
             }
             if self.model == "openai/gpt-5-high":  # high reasoning effort
                 model_to_call = "openai/gpt-5"
@@ -58,8 +53,6 @@ class OpenRouterClient:
 
             log.info(f"Sending request to {model_to_call}")
             log.debug(f"Detailed prompt sent to {model_to_call}: {messages}")
-            completion = None
-            content = None
             start = time.time()
             stream = self.client.chat.completions.create(
                 model=model_to_call,
@@ -68,12 +61,13 @@ class OpenRouterClient:
                 extra_body=extra_body,
                 stream=True,
             )
-            content = []
+            contents = []
             for i, chunk in enumerate(stream):
                 if i < 3 or i % 1000 == 0:
                     log.debug(f"Chunk {i}: {chunk}")
-                content.append(chunk.choices[0].delta.content)
-            content = "".join(content)
+                contents.append(chunk.choices[0].delta.content)
+            log.debug(f"Chunk {i} (last one): {chunk}")
+            content = "".join(contents)
             log.debug(f"Final content: {content}")
             latency = time.time() - start
             try:
@@ -84,8 +78,7 @@ class OpenRouterClient:
                 )
                 total_cost = cost + upstream_cost
             except Exception as e:
-                log.error(f"Error getting cost from {self.model}: {e}")
-                log.debug(f"Last chunk: {chunk}")
+                log.warning(f"💰 Error getting cost from {self.model}: {e}")
                 total_cost, upstream_cost = 0, 0
             if content:
                 move = json.loads(content).get("choice")
@@ -100,7 +93,6 @@ class OpenRouterClient:
                 }
             else:
                 log.warning(f"No content received from {self.model}")
-                log.debug(f"Completion: {completion}")
                 return None
         except Exception as e:
             log.error(f"Error getting response from {self.model}: {e}")
