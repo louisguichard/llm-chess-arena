@@ -216,7 +216,7 @@ class ChessGame:
 
     def determine_game_result(self):
         """Determine the final result if the game ended naturally."""
-        if self.board.is_game_over():
+        if self.board.is_game_over(claim_draw=True):
             result = self.board.result(claim_draw=True)
             self.game.headers["Result"] = result
             if self.board.is_checkmate():
@@ -229,10 +229,20 @@ class ChessGame:
                 self.game.headers["Termination"] = "threefold repetition"
             else:
                 self.game.headers["Termination"] = "draw"
+            # Log extra context to help diagnose unexpected terminations
+            log.info(
+                f"Game ended. result={self.game.headers['Result']}, termination={self.game.headers['Termination']}, "
+                f"fullmove={self.board.fullmove_number}, halfmove={self.board.halfmove_clock}, "
+                f"can_claim_50={self.board.can_claim_fifty_moves()}, can_claim_3fold={self.board.can_claim_threefold_repetition()}, "
+                f"fen={self.board.fen()}"
+            )
         else:
             # Game ended due to move limit
             self.game.headers["Result"] = "1/2-1/2"
             self.game.headers["Termination"] = "exceeded moves limit"
+            log.info(
+                f"Game ended without is_game_over. Assuming move limit. fullmove={self.board.fullmove_number}, max_moves={self.max_moves}, fen={self.board.fen()}"
+            )
 
     def save_game(self):
         """Save game to PGN and JSON."""
@@ -284,7 +294,7 @@ class ChessGame:
         """
         if (
             self.is_over
-            or self.board.is_game_over()
+            or self.board.is_game_over(claim_draw=True)
             or self.board.fullmove_number > self.max_moves
         ):
             self.is_over = True
