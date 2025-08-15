@@ -1,7 +1,7 @@
 {% from 'logos.html' import render_logo %}
 
 {% macro player_panel(color, llms) %}
-<div id="{{ color }}-panel" class="player-panel bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-4 md:p-6 flex flex-col h-full transition-all duration-300">
+<div id="{{ color }}-panel" class="player-panel bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-4 md:p-6 flex flex-col h-full min-h-0 transition-all duration-300">
     <input type="hidden" name="{{ color }}_player" class="player-input">
     <div class="relative mb-4">
         <button type="button" class="player-selector-button w-full flex items-center text-left p-2 -m-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-zinc-800/80 disabled:cursor-not-allowed disabled:hover:bg-transparent">
@@ -52,7 +52,7 @@
         </ul>
     </div>
     
-    <div class="border-t border-gray-200 dark:border-zinc-700 pt-4 flex flex-col flex-grow">
+    <div class="border-t border-gray-200 dark:border-zinc-700 pt-4 flex flex-col flex-grow min-h-0">
         <div class="grid grid-cols-2 gap-4 mb-4 text-center">
             <div class="bg-gray-100 dark:bg-zinc-800 p-2 rounded-lg">
                 <div class="flex items-center justify-center text-gray-500 dark:text-gray-400 text-xs sm:text-sm"><svg class="w-4 h-4 mr-1.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Time</div>
@@ -65,7 +65,7 @@
         </div>
         <div class="flex-grow min-h-0 flex flex-col">
             <h4 class="text-sm font-semibold mb-2 text-gray-800 dark:text-gray-200">Move History & Reasoning</h4>
-            <div id="{{ color }}-moves" class="bg-gray-50 dark:bg-zinc-800/50 rounded-lg p-3 flex-grow overflow-y-auto space-y-3 text-sm" style="max-height: 300px;">
+            <div id="{{ color }}-moves" class="bg-gray-50 dark:bg-zinc-800/50 rounded-lg p-3 flex-grow overflow-y-auto space-y-3 text-sm">
                 <p class="text-gray-400 dark:text-gray-500 italic h-full flex items-center justify-center">Waiting for game to start...</p>
             </div>
         </div>

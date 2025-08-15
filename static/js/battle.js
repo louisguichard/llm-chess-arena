@@ -568,6 +568,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 pieceImg.removeAttribute('src');
             }
         });
+		// Recalculate panel heights after board updates (for xl screens)
+		applyPanelHeights();
     }
 
     function updateStats(gameData) {
@@ -614,4 +616,63 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setupPlayerPanels();
     initStockfish();
+    
+    // Height sync utilities (xl screens only)
+    function applyPanelHeights() {
+        try {
+            const isXL = window.matchMedia('(min-width: 1280px)').matches;
+            const whitePanel = document.getElementById('white-panel');
+            const blackPanel = document.getElementById('black-panel');
+            const boardEl = document.getElementById('chessboard');
+            if (!whitePanel || !blackPanel) return;
+            if (!isXL) {
+                whitePanel.style.height = '';
+                blackPanel.style.height = '';
+                return;
+            }
+            if (!boardEl) return;
+            const boardContainer = document.getElementById('chessboard-container');
+            const boardCard = boardContainer || boardEl.parentElement || boardEl;
+            const h = (boardCard && boardCard.offsetHeight) ? boardCard.offsetHeight : 0;
+            if (h > 0) {
+                function calcContentHeight(el, total) {
+                    try {
+                        const cs = window.getComputedStyle(el);
+                        const box = (cs.boxSizing || '').toLowerCase();
+                        if (box === 'border-box') return Math.max(0, total);
+                        const pt = parseFloat(cs.paddingTop) || 0;
+                        const pb = parseFloat(cs.paddingBottom) || 0;
+                        const bt = parseFloat(cs.borderTopWidth) || 0;
+                        const bb = parseFloat(cs.borderBottomWidth) || 0;
+                        const extras = pt + pb + bt + bb;
+                        return Math.max(0, total - extras);
+                    } catch (e) { return Math.max(0, total); }
+                }
+                whitePanel.style.height = calcContentHeight(whitePanel, h) + 'px';
+                blackPanel.style.height = calcContentHeight(blackPanel, h) + 'px';
+            }
+        } catch (e) {}
+    }
+
+    function setupHeightSync() {
+        applyPanelHeights();
+        const boardEl = document.getElementById('chessboard');
+        if (boardEl && typeof ResizeObserver !== 'undefined') {
+            try { if (window.__boardResizeObserver) window.__boardResizeObserver.disconnect(); } catch (e) {}
+            try {
+                const ro = new ResizeObserver(() => applyPanelHeights());
+                // Observe the card wrapper to include padding/border changes
+                const boardContainer = document.getElementById('chessboard-container');
+                const boardCard = boardContainer || boardEl.parentElement || boardEl;
+                ro.observe(boardCard);
+                window.__boardResizeObserver = ro;
+            } catch (e) {}
+        }
+        window.addEventListener('resize', applyPanelHeights);
+        // Run again after initial layout settles
+        requestAnimationFrame(applyPanelHeights);
+        setTimeout(applyPanelHeights, 100);
+    }
+
+    setupHeightSync();
 });
