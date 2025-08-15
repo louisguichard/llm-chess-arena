@@ -33,6 +33,12 @@
                                         <div class="flex items-center gap-2">
                                             <p class="text-sm text-gray-500 dark:text-gray-400">{{ llm.provider }}</p>
                                             {% if llm.tags %}
+                                                {% set tag_explanations = {
+                                                    'Fast': 'Each move usually takes less than 20s.',
+                                                    'Open-source': 'Model’s weights are publicly available.',
+                                                    'Expensive': 'Each game usually costs more than €0.50.',
+                                                    'Deactivated': 'This model is currently unavailable.'
+                                                } %}
                                                 <div class="flex gap-1">
                                                     {% for tag in llm.tags %}
                                                         <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium 
@@ -40,7 +46,7 @@
                                                             {% elif tag == 'Expensive' %}bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300
                                                             {% elif tag == 'Fast' %}bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300
                                                             {% else %}bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300
-                                                            {% endif %}">
+                                                            {% endif %}" title="{{ tag_explanations.get(tag, '') }}">
                                                             {{ tag }}
                                                         </span>
                                                     {% endfor %}
