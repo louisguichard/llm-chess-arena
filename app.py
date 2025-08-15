@@ -116,15 +116,36 @@ def index():
 @app.route("/api/start_game", methods=["POST"])
 def start_game():
     data = request.get_json()
-    white_model = data.get("white_player")
-    black_model = data.get("black_player")
+    white_model_id = data.get("white_player")
+    black_model_id = data.get("black_player")
 
-    if not white_model or not black_model:
+    if not white_model_id or not black_model_id:
         return jsonify({"error": "Both players must be selected."}), 400
 
+    models = read_models_from_file(MODELS_FILE)
+    white_model_data = next((m for m in models if m["id"] == white_model_id), None)
+    black_model_data = next((m for m in models if m["id"] == black_model_id), None)
+
+    if not white_model_data or not black_model_data:
+        return jsonify({"error": "One or both selected models are invalid."}), 400
+
+    if "Deactivated" in white_model_data.get("tags", []):
+        return jsonify(
+            {
+                "error": f"{white_model_data.get('name', white_model_id)} is deactivated and cannot be used."
+            }
+        ), 400
+
+    if "Deactivated" in black_model_data.get("tags", []):
+        return jsonify(
+            {
+                "error": f"{black_model_data.get('name', black_model_id)} is deactivated and cannot be used."
+            }
+        ), 400
+
     game = ChessGame(
-        white_player=OpenRouterClient(white_model),
-        black_player=OpenRouterClient(black_model),
+        white_player=OpenRouterClient(white_model_id),
+        black_player=OpenRouterClient(black_model_id),
     )
 
     game_id = str(uuid.uuid4())
@@ -135,7 +156,9 @@ def start_game():
         "cond": threading.Condition(),
         "version": 0,
     }
-    log.info(f"Starting new game: {white_model} vs. {black_model} (ID: {game_id})")
+    log.info(
+        f"Starting new game: {white_model_id} vs. {black_model_id} (ID: {game_id})"
+    )
 
     return jsonify({"game_id": game_id})
 

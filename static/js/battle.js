@@ -482,6 +482,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             llmOptions.forEach(option => {
                 option.addEventListener('click', () => {
+                    if (option.dataset.deactivated === 'true') {
+                        return;
+                    }
                     const llmId = option.dataset.llmId;
                     
                     // Disable option in other panel
@@ -494,7 +497,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             // Respect deactivated styling if present
                             opt.classList.remove('cursor-not-allowed');
                             if (opt.dataset.deactivated === 'true') {
-                                opt.classList.add('text-gray-400', 'dark:text-zinc-500');
+                                opt.classList.add('text-gray-400', 'dark:text-zinc-500', 'cursor-not-allowed');
                                 opt.classList.remove('text-gray-900', 'dark:text-gray-100');
                             } else {
                                 opt.classList.remove('text-gray-400', 'dark:text-zinc-500', 'dark:text-zinc-600');

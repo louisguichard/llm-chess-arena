@@ -19,7 +19,7 @@
         </button>
         <ul class="player-selector-list hidden absolute z-10 mt-2 w-full bg-white dark:bg-zinc-800 shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
             {% for llm in llms %}
-                <li data-llm-id="{{ llm.id }}" data-llm-name="{{ llm.name }}" data-llm-provider="{{ llm.provider }}" data-llm-elo="{{ llm.elo | round | int }}" data-deactivated="{{ 'true' if llm.deactivated else 'false' }}" class="llm-option cursor-pointer select-none relative py-2 pl-3 pr-9 {% if llm.deactivated %}text-gray-400 dark:text-zinc-500{% else %}text-black dark:text-gray-100{% endif %} hover:bg-indigo-600 hover:text-white">
+                <li data-llm-id="{{ llm.id }}" data-llm-name="{{ llm.name }}" data-llm-provider="{{ llm.provider }}" data-llm-elo="{{ llm.elo | round | int }}" data-deactivated="{{ 'true' if llm.deactivated else 'false' }}" class="llm-option select-none relative py-2 pl-3 pr-9 {% if llm.deactivated %}text-gray-400 dark:text-zinc-500 cursor-default{% else %}text-black dark:text-gray-100 cursor-pointer hover:bg-indigo-600 hover:text-white{% endif %}">
                     <span class="flex items-center justify-between w-full">
                         <div class="flex items-center">
                             <div class="w-6 h-6 mr-2 flex-shrink-0">{{ render_logo(llm.provider, 'h-6 w-6', 'text-sm') }}</div>
@@ -38,6 +38,7 @@
                                         {% if tag == 'Open-source' %}bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300
                                         {% elif tag == 'Expensive' %}bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300
                                         {% elif tag == 'Fast' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300
+                                        {% elif tag == 'Deactivated' %}bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300
                                         {% else %}bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300
                                         {% endif %}" title="{{ tag_explanations.get(tag, '') }}">
                                         {{ tag }}
