@@ -45,8 +45,12 @@ def index():
                 "provider": model_id.split("/")[0] or "Unknown",
                 "elo": ratings.get(model_id),
                 "tags": tags,
+                "deactivated": any((t or "").lower() == "deactivated" for t in tags),
             }
         )
+
+    # Show deactivated models at the end (stable sort keeps original order otherwise)
+    llms.sort(key=lambda m: m.get("deactivated", False))
 
     # Prepare data for leaderboard page
     leaderboard_data = []

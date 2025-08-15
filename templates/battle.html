@@ -19,11 +19,11 @@
         </button>
         <ul class="player-selector-list hidden absolute z-10 mt-2 w-full bg-white dark:bg-zinc-800 shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
             {% for llm in llms %}
-                <li data-llm-id="{{ llm.id }}" data-llm-name="{{ llm.name }}" data-llm-provider="{{ llm.provider }}" data-llm-elo="{{ llm.elo | round | int }}" class="llm-option cursor-pointer select-none relative py-2 pl-3 pr-9 text-black dark:text-gray-100 hover:bg-indigo-600 hover:text-white">
+                <li data-llm-id="{{ llm.id }}" data-llm-name="{{ llm.name }}" data-llm-provider="{{ llm.provider }}" data-llm-elo="{{ llm.elo | round | int }}" data-deactivated="{{ 'true' if llm.deactivated else 'false' }}" class="llm-option cursor-pointer select-none relative py-2 pl-3 pr-9 {% if llm.deactivated %}text-gray-400 dark:text-zinc-500{% else %}text-black dark:text-gray-100{% endif %} hover:bg-indigo-600 hover:text-white">
                     <span class="flex items-center justify-between w-full">
                         <div class="flex items-center">
                             <div class="w-6 h-6 mr-2 flex-shrink-0">{{ render_logo(llm.provider, 'h-6 w-6', 'text-sm') }}</div>
-                            <span class="font-normal block truncate text-black dark:text-gray-100">{{ llm.name }}</span>
+                            <span class="font-normal block truncate {% if llm.deactivated %}text-gray-400 dark:text-zinc-500{% else %}text-black dark:text-gray-100{% endif %}">{{ llm.name }}</span>
                         </div>
                         {% if llm.tags %}
                             <div class="flex gap-1 ml-2">
