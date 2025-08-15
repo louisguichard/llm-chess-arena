@@ -6,3 +6,4 @@ google-cloud-aiplatform
 google-cloud-storage
 google-cloud-logging
 openai==1.99.9
+requests

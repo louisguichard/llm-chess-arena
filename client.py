@@ -4,6 +4,7 @@ import os
 import time
 import json
 import httpx
+import requests
 from openai import OpenAI
 
 from dotenv import load_dotenv
@@ -39,18 +40,45 @@ class OpenRouterClient:
     def name(self):
         return self.model
 
+    def get_providers(self, model_to_call):
+        headers = {"Authorization": f"Bearer {OPENROUTER_API_KEY}"}
+        endpoints_url = f"https://openrouter.ai/api/v1/models/{model_to_call}/endpoints"
+        response = requests.get(endpoints_url, headers=headers, timeout=20)
+        if response.status_code == 200:
+            data = response.json()
+            providers = (data or {}).get("data", {}).get("endpoints", [])
+            providers_with_format = [
+                provider["provider_name"]
+                for provider in providers
+                if "response_format" in provider.get("supported_parameters", [])
+            ]
+            log.debug(
+                f"Providers supporting response_format for {model_to_call}: {providers_with_format}"
+            )
+            return providers_with_format
+        else:
+            log.warning(
+                f"Failed to request providers for {model_to_call} (status {response.status_code})."
+            )
+            return None
+
     def chat(self, messages):
         try:
-            extra_body = {
-                "usage": {"include": True},
-                "provider": {"require_parameters": True},
-            }
+            extra_body = {"usage": {"include": True}}
             if self.model == "openai/gpt-5-high":  # high reasoning effort
                 model_to_call = "openai/gpt-5"
                 extra_body["reasoning"] = {"effort": "high"}
             else:
                 model_to_call = self.model
 
+            # Restrict to providers that support response_format for this model
+            providers = self.get_providers(model_to_call)
+            if providers:
+                extra_body["provider"] = {"only": providers}
+            else:
+                log.warning(
+                    f"No provider supports response_format for {model_to_call}. Proceeding without choosing a provider."
+                )
             log.info(f"Sending request to {model_to_call}")
             log.debug(f"Detailed prompt sent to {model_to_call}: {messages}")
             start = time.time()
@@ -65,22 +93,22 @@ class OpenRouterClient:
             for i, chunk in enumerate(stream):
                 if i < 3 or i % 1000 == 0:
                     log.debug(f"Chunk {i}: {chunk}")
-                contents.append(chunk.choices[0].delta.content)
+                contents.append(chunk.choices[0].delta.content or "")
             log.debug(f"Chunk {i} (last one): {chunk}")
             content = "".join(contents)
             log.debug(f"Final content: {content}")
             latency = time.time() - start
-            try:
-                # Cost should be in the last chunk
-                cost = chunk.usage.cost
-                upstream_cost = (
-                    chunk.usage.cost_details.get("upstream_inference_cost") or 0
-                )
-                total_cost = cost + upstream_cost
-            except Exception as e:
-                log.warning(f"💰 Error getting cost from {self.model}: {e}")
-                total_cost, upstream_cost = 0, 0
             if content:
+                try:
+                    # Cost should be in the last chunk
+                    cost = chunk.usage.cost
+                    upstream_cost = (
+                        chunk.usage.cost_details.get("upstream_inference_cost") or 0
+                    )
+                    total_cost = cost + upstream_cost
+                except Exception as e:
+                    log.warning(f"💰 Error getting cost from {self.model}: {e}")
+                    total_cost, upstream_cost = 0, 0
                 move = json.loads(content).get("choice")
                 log.info(
                     f"Received response from {self.model} - Cost: {total_cost:.3f}€ (including {upstream_cost:.3f}€ upstream) - Latency: {latency:.1f}s - Move: {move}"
@@ -92,7 +120,9 @@ class OpenRouterClient:
                     "latency": latency,
                 }
             else:
-                log.warning(f"No content received from {self.model}")
+                log.warning(
+                    f"No content received from {self.model} - Latency: {latency:.1f}s"
+                )
                 return None
         except Exception as e:
             log.error(f"Error getting response from {self.model}: {e}")
