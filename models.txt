@@ -22,7 +22,7 @@ anthropic/claude-opus-4.1, Claude Opus 4.1, [Expensive]
 anthropic/claude-sonnet-4, Claude Sonnet 4, [Expensive, Fast]
 
 # xAI
-# x-ai/grok-4, Grok 4, [Expensive, Deactivated]
+x-ai/grok-4, Grok 4, [Expensive]
 x-ai/grok-3, Grok 3, [Expensive]
 
 # Meta

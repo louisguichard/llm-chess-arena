@@ -11,14 +11,17 @@ from dotenv import load_dotenv
 from logger import log
 from prompts import JSON_SCHEMA
 
-# Load OpenRouter API key from environment variables
+# Load API keys from environment variables
 load_dotenv()
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 if not OPENROUTER_API_KEY:
     raise RuntimeError("OPENROUTER_API_KEY not found in environment variables")
+GROK_API_KEY = os.getenv("GROK_API_KEY")
+if not GROK_API_KEY:
+    raise RuntimeError("GROK_API_KEY not found in environment variables")
 
 
-class OpenRouterClient:
+class LLMClient:
     """Simple OpenRouter-backed client using OpenAI SDK over OpenRouter."""
 
     def __init__(
@@ -26,16 +29,28 @@ class OpenRouterClient:
         model,
     ):
         self.model = model
-        self.client = OpenAI(
-            base_url="https://openrouter.ai/api/v1",
-            api_key=OPENROUTER_API_KEY,
-            timeout=httpx.Timeout(
-                connect=10,  # max to establish the connection
-                read=120,  # max between different chunks
-                write=10,  # max to send data
-                pool=600,  # max lifetime of the connection
-            ),
-        )
+        if model == "x-ai/grok-4":
+            self.client = OpenAI(
+                base_url="https://api.x.ai/v1",
+                api_key=GROK_API_KEY,
+                timeout=httpx.Timeout(
+                    connect=10,  # max to establish the connection
+                    read=120,  # max between different chunks
+                    write=10,  # max to send data
+                    pool=600,  # max lifetime of the connection
+                ),
+            )
+        else:
+            self.client = OpenAI(
+                base_url="https://openrouter.ai/api/v1",
+                api_key=OPENROUTER_API_KEY,
+                timeout=httpx.Timeout(
+                    connect=10,  # max to establish the connection
+                    read=120,  # max between different chunks
+                    write=10,  # max to send data
+                    pool=600,  # max lifetime of the connection
+                ),
+            )
 
     def name(self):
         return self.model
@@ -68,6 +83,8 @@ class OpenRouterClient:
             if self.model == "openai/gpt-5-high":  # high reasoning effort
                 model_to_call = "openai/gpt-5"
                 extra_body["reasoning"] = {"effort": "high"}
+            elif self.model == "x-ai/grok-4":
+                model_to_call = "grok-4"
             else:
                 model_to_call = self.model
 

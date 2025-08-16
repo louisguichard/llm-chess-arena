@@ -12,7 +12,7 @@ from flask import stream_with_context
 from utils import read_models_from_file
 from ratings import RatingsTable
 from match import ChessGame
-from client import OpenRouterClient
+from client import LLMClient
 import traceback
 from logger import log
 import json
@@ -144,8 +144,8 @@ def start_game():
         ), 400
 
     game = ChessGame(
-        white_player=OpenRouterClient(white_model_id),
-        black_player=OpenRouterClient(black_model_id),
+        white_player=LLMClient(white_model_id),
+        black_player=LLMClient(black_model_id),
     )
 
     game_id = str(uuid.uuid4())
