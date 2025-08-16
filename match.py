@@ -216,24 +216,19 @@ class ChessGame:
 
     def determine_game_result(self):
         """Determine the final result if the game ended naturally."""
-        if self.board.is_game_over(claim_draw=True):
-            result = self.board.result(claim_draw=True)
+        if self.board.is_game_over(claim_draw=False):
+            result = self.board.result(claim_draw=False)
             self.game.headers["Result"] = result
             if self.board.is_checkmate():
                 self.game.headers["Termination"] = "checkmate"
             elif self.board.is_stalemate():
                 self.game.headers["Termination"] = "stalemate"
-            elif self.board.can_claim_fifty_moves():
-                self.game.headers["Termination"] = "50-move rule"
-            elif self.board.can_claim_threefold_repetition():
-                self.game.headers["Termination"] = "threefold repetition"
             else:
                 self.game.headers["Termination"] = "draw"
             # Log extra context to help diagnose unexpected terminations
             log.info(
                 f"Game ended. result={self.game.headers['Result']}, termination={self.game.headers['Termination']}, "
                 f"fullmove={self.board.fullmove_number}, halfmove={self.board.halfmove_clock}, "
-                f"can_claim_50={self.board.can_claim_fifty_moves()}, can_claim_3fold={self.board.can_claim_threefold_repetition()}, "
                 f"fen={self.board.fen()}"
             )
         else:
@@ -294,7 +289,7 @@ class ChessGame:
         """
         if (
             self.is_over
-            or self.board.is_game_over(claim_draw=True)
+            or self.board.is_game_over(claim_draw=False)
             or self.board.fullmove_number > self.max_moves
         ):
             self.is_over = True
@@ -406,7 +401,7 @@ class ChessGame:
         self.node = self.node.add_variation(move)
 
         # Check for game over condition after the move
-        if self.board.is_game_over(claim_draw=True):
+        if self.board.is_game_over(claim_draw=False):
             self.is_over = True
             self.determine_game_result()
             self.save_game()
