@@ -102,19 +102,19 @@ class LLMClient:
             log.info(f"Sending request to {model_to_call}")
             log.debug(f"Detailed prompt sent to {model_to_call}: {messages}")
             start = time.time()
-            stream = self.client.chat.completions.create(
+            with self.client.chat.completions.create(
                 model=model_to_call,
                 messages=messages,
                 response_format={"type": "json_schema", "json_schema": JSON_SCHEMA},
                 extra_body=extra_body,
                 stream=True,
-            )
-            contents = []
-            for i, chunk in enumerate(stream):
-                if i < 3 or i % 1000 == 0:
-                    log.debug(f"Chunk {i}: {chunk}")
-                contents.append(chunk.choices[0].delta.content or "")
-            log.debug(f"Chunk {i} (last one): {chunk}")
+            ) as stream:
+                contents = []
+                for i, chunk in enumerate(stream):
+                    if i < 3 or i % 1000 == 0:
+                        log.debug(f"Chunk {i}: {chunk}")
+                    contents.append(chunk.choices[0].delta.content or "")
+                log.debug(f"Chunk {i} (last one): {chunk}")
             content = "".join(contents)
             log.debug(f"Final content: {content}")
             latency = time.time() - start
