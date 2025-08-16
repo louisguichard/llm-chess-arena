@@ -89,7 +89,10 @@ class LLMClient:
                 model_to_call = self.model
 
             # Restrict to providers that support response_format for this model
-            providers = self.get_providers(model_to_call)
+            if self.model == "x-ai/grok-4":
+                providers = []
+            else:
+                providers = self.get_providers(model_to_call)
             if providers:
                 extra_body["provider"] = {"only": providers}
             else:
