@@ -43,7 +43,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!s) return;
                     let cp;
                     if (s.kind === 'cp') cp = s.value;
-                    else if (s.kind === 'mate') cp = (s.value >= 0 ? 1 : -1) * EVAL_MAX_CP;
+                    else if (s.kind === 'mate') {
+                        // Treat mate 0 as a loss for the side to move (already checkmated)
+                        const sign = s.value > 0 ? 1 : -1;
+                        cp = (s.value === 0 ? -1 : sign) * EVAL_MAX_CP;
+                    }
                     else return;
                     const whiteCp = (lastSideToMove === 'w') ? cp : -cp;
                     const p = cpToWhitePercent(whiteCp);
@@ -259,6 +263,14 @@ document.addEventListener('DOMContentLoaded', () => {
             winnerContainer.style.display = 'block';
             isGameRunning = false;
             startButton.disabled = false;
+
+            // Lock the eval bar to the winner on checkmate to avoid any flip
+            try {
+                if (termination === 'checkmate') {
+                    if (result === '1-0') setEvalBar(100);
+                    else if (result === '0-1') setEvalBar(0);
+                }
+            } catch (e) {}
         }
     }
 
