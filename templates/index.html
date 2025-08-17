@@ -78,6 +78,17 @@
             const page = (e.state && e.state.page) || (window.location.pathname.indexOf('/leaderboard') !== -1 ? 'leaderboard' : 'battle');
             showPage(page);
         });
+
+        // Mobile leaderboard toggle: tap on model cell to show/hide details row
+        document.addEventListener('click', (e) => {
+            const toggleCell = e.target.closest('td.mobile-toggle');
+            if (!toggleCell) return;
+            const row = toggleCell.parentElement;
+            const detailsRow = row.nextElementSibling;
+            if (!detailsRow || !detailsRow.classList.contains('mobile-details')) return;
+            detailsRow.classList.toggle('hidden');
+        });
+
     });
 </script>
 {% endblock %}

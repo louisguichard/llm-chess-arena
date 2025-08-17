@@ -1,9 +1,9 @@
 {% from 'logos.html' import render_logo %}
 
 {% macro player_panel(color, llms) %}
-<div id="{{ color }}-panel" class="player-panel bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-4 md:p-6 flex flex-col h-full min-h-0 transition-all duration-300">
+<div id="{{ color }}-panel" class="player-panel bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-3 md:p-6 flex flex-col h-full min-h-0 transition-all duration-300">
     <input type="hidden" name="{{ color }}_player" class="player-input">
-    <div class="relative mb-4">
+    <div class="relative mb-2 md:mb-4">
         <button type="button" class="player-selector-button w-full flex items-center text-left p-2 -m-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-zinc-800/80 disabled:cursor-not-allowed disabled:hover:bg-transparent">
             <div class="flex items-center w-full">
                 <div class="player-avatar bg-gray-200 dark:bg-zinc-800 border-2 border-dashed border-gray-300 dark:border-zinc-700 rounded-full w-12 h-12 mr-4 flex-shrink-0 flex items-center justify-center"></div>
@@ -19,7 +19,7 @@
         </button>
         <ul class="player-selector-list hidden absolute z-10 mt-2 w-full bg-white dark:bg-zinc-800 shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
             {% for llm in llms %}
-                <li data-llm-id="{{ llm.id }}" data-llm-name="{{ llm.name }}" data-llm-provider="{{ llm.provider }}" data-llm-elo="{{ llm.elo | round | int }}" data-deactivated="{{ 'true' if llm.deactivated else 'false' }}" class="llm-option select-none relative py-2 pl-3 pr-9 {% if llm.deactivated %}text-gray-400 dark:text-zinc-500 cursor-default{% else %}text-black dark:text-gray-100 cursor-pointer hover:bg-indigo-600 hover:text-white{% endif %}">
+                <li data-llm-id="{{ llm.id }}" data-llm-name="{{ llm.name }}" data-llm-provider="{{ llm.provider }}" data-llm-elo="{{ llm.elo | round | int }}" data-deactivated="{{ 'true' if llm.deactivated else 'false' }}" class="llm-option select-none relative py-3 pl-3 pr-4 {% if llm.deactivated %}text-gray-400 dark:text-zinc-500 cursor-default{% else %}text-black dark:text-gray-100 cursor-pointer hover:bg-green-50 dark:hover:bg-green-900/20 hover:text-green-700 dark:hover:text-green-300{% endif %}">
                     <span class="flex items-center justify-between w-full">
                         <div class="flex items-center">
                             <div class="w-6 h-6 mr-2 flex-shrink-0">{{ render_logo(llm.provider, 'h-6 w-6', 'text-sm') }}</div>
@@ -28,7 +28,7 @@
                         {% if llm.tags %}
                             {% set tag_explanations = {
                                 'Fast': 'Each move usually takes less than 20s.',
-                                'Open-source': 'Model’s weights are publicly available.',
+                                'Open-source': 'Model weights are publicly available.',
                                 'Expensive': 'Each game usually costs more than €0.50.',
                                 'Deactivated': 'This model is currently unavailable.'
                             } %}
@@ -53,19 +53,19 @@
     </div>
     
     <div class="border-t border-gray-200 dark:border-zinc-700 pt-4 flex flex-col flex-grow min-h-0">
-        <div class="grid grid-cols-2 gap-4 mb-4 text-center">
-            <div class="bg-gray-100 dark:bg-zinc-800 p-2 rounded-lg">
+        <div class="grid grid-cols-2 gap-2 md:gap-4 mb-2 md:mb-4 text-center">
+            <div class="bg-gray-100 dark:bg-zinc-800 p-1.5 md:p-2 rounded-lg">
                 <div class="flex items-center justify-center text-gray-500 dark:text-gray-400 text-xs sm:text-sm"><svg class="w-4 h-4 mr-1.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Time</div>
-                <div id="{{ color }}-time" class="font-mono text-lg text-gray-900 dark:text-gray-100">0.00s</div>
+                <div id="{{ color }}-time" class="font-mono text-base md:text-lg text-gray-900 dark:text-gray-100">0.00s</div>
             </div>
-            <div class="bg-gray-100 dark:bg-zinc-800 p-2 rounded-lg">
+            <div class="bg-gray-100 dark:bg-zinc-800 p-1.5 md:p-2 rounded-lg">
                 <div class="flex items-center justify-center text-gray-500 dark:text-gray-400 text-xs sm:text-sm"><svg class="w-4 h-4 mr-1.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg> Cost</div>
-                <div id="{{ color }}-cost" class="font-mono text-lg text-gray-900 dark:text-gray-100">$0.0000</div>
+                <div id="{{ color }}-cost" class="font-mono text-base md:text-lg text-gray-900 dark:text-gray-100">€0.0000</div>
             </div>
         </div>
         <div class="flex-grow min-h-0 flex flex-col">
-            <h4 class="text-sm font-semibold mb-2 text-gray-800 dark:text-gray-200">Move History & Reasoning</h4>
-            <div id="{{ color }}-moves" class="bg-gray-50 dark:bg-zinc-800/50 rounded-lg p-3 flex-grow overflow-y-auto space-y-3 text-sm">
+            <h4 class="text-xs md:text-sm font-semibold mb-1 md:mb-2 text-gray-800 dark:text-gray-200">Move History & Reasoning</h4>
+            <div id="{{ color }}-moves" class="bg-gray-50 dark:bg-zinc-800/50 rounded-lg p-2 md:p-3 flex-grow overflow-y-auto space-y-2 md:space-y-3 text-xs md:text-sm max-h-32 md:max-h-60 xl:max-h-none">
                 <p class="text-gray-400 dark:text-gray-500 italic h-full flex items-center justify-center">Waiting for game to start...</p>
             </div>
         </div>
@@ -107,22 +107,22 @@
 
 <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <form id="start-game-form" action="{{ url_for('start_game') }}" method="post">
-        <div class="grid grid-cols-1 xl:grid-cols-7 gap-6 lg:gap-8">
-            <div class="xl:col-span-2" id="player1-panel">
+        <div class="grid grid-cols-1 xl:grid-cols-7 gap-4 md:gap-6 lg:gap-8">
+            <div class="xl:col-span-2 order-1 xl:order-1" id="player1-panel">
                 {{ player_panel('white', llms) }}
             </div>
-            <div class="xl:col-span-3 flex flex-col items-center gap-4">
-                <div id="chessboard-container" class="w-full">
+            <div class="xl:col-span-3 order-2 xl:order-2 flex flex-col items-center gap-3 md:gap-4">
+                <div id="chessboard-container" class="w-full max-w-md mx-auto xl:max-w-none">
                     {{ chessboard(initial_board) }}
                 </div>
-                <div id="evalbar-container" class="w-full">
+                <div id="evalbar-container" class="w-full max-w-md mx-auto xl:max-w-none">
                     <div class="w-full h-3 rounded-md overflow-hidden border border-gray-200 dark:border-zinc-700 bg-gray-100 dark:bg-zinc-800 flex">
                         <div id="eval-white" class="h-full bg-white transition-[width] duration-1000" style="width: 50%;"></div>
                         <div id="eval-black" class="h-full bg-green-600 transition-[width] duration-1000" style="width: 50%;"></div>
                     </div>
                 </div>
-                <div class="text-center">
-                    <button id="start-battle-btn" type="submit" class="w-auto flex items-center justify-center gap-2 bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 disabled:bg-green-900/50 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors mx-auto">
+                <div class="text-center hidden xl:block">
+                    <button id="start-battle-btn" type="submit" class="w-auto flex items-center justify-center gap-2 bg-green-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-green-700 disabled:bg-green-900/50 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors mx-auto shadow-sm">
                         <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
                         <span>Start Battle</span>
                     </button>
@@ -132,8 +132,20 @@
                     </div>
                 </div>
             </div>
-            <div class="xl:col-span-2" id="player2-panel">
+            <div class="xl:col-span-2 order-3 xl:order-3" id="player2-panel">
                 {{ player_panel('black', llms) }}
+            </div>
+        </div>
+        
+        <!-- Mobile Start Battle Button (after player selection) -->
+        <div class="xl:hidden text-center mt-6">
+            <button id="start-battle-btn-mobile" type="submit" class="w-auto flex items-center justify-center gap-2 bg-green-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-green-700 disabled:bg-green-900/50 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors mx-auto shadow-sm">
+                <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+                <span>Start Battle</span>
+            </button>
+            <div id="winner-container-mobile" class="mt-3" style="display: none;">
+                <p id="winner-text-mobile" class="font-semibold text-lg text-black dark:text-gray-100"></p>
+                <p id="winner-reason-mobile" class="text-sm text-gray-500 dark:text-gray-400"></p>
             </div>
         </div>
     </form>

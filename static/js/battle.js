@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('start-game-form');
     const startButton = document.getElementById('start-battle-btn');
+    const startButtonMobile = document.getElementById('start-battle-btn-mobile');
     const winnerContainer = document.getElementById('winner-container');
     const winnerText = document.getElementById('winner-text');
     const winnerReason = document.getElementById('winner-reason');
@@ -168,8 +169,8 @@ document.addEventListener('DOMContentLoaded', () => {
 			const blackCostEl = document.getElementById('black-cost');
 			if (whiteTimeEl) whiteTimeEl.textContent = '0.00s';
 			if (blackTimeEl) blackTimeEl.textContent = '0.00s';
-			if (whiteCostEl) whiteCostEl.textContent = '$0.0000';
-			if (blackCostEl) blackCostEl.textContent = '$0.0000';
+			if (whiteCostEl) whiteCostEl.textContent = '€0.0000';
+			if (blackCostEl) blackCostEl.textContent = '€0.0000';
 
 			const whitePanel = document.getElementById('white-panel');
 			const blackPanel = document.getElementById('black-panel');
@@ -179,6 +180,14 @@ document.addEventListener('DOMContentLoaded', () => {
 			winnerContainer.style.display = 'none';
 			winnerText.textContent = '';
 			winnerReason.textContent = '';
+			
+			// Also reset mobile winner container
+			const winnerContainerMobile = document.getElementById('winner-container-mobile');
+			const winnerTextMobile = document.getElementById('winner-text-mobile');
+			const winnerReasonMobile = document.getElementById('winner-reason-mobile');
+			if (winnerContainerMobile) winnerContainerMobile.style.display = 'none';
+			if (winnerTextMobile) winnerTextMobile.textContent = '';
+			if (winnerReasonMobile) winnerReasonMobile.textContent = '';
 
 			// Reset move history placeholders
 			const whiteMoves = document.getElementById('white-moves');
@@ -233,8 +242,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const bc = document.getElementById('black-cost');
         if (wt) wt.textContent = `${whiteTime.toFixed(2)}s`;
         if (bt) bt.textContent = `${blackTime.toFixed(2)}s`;
-        if (wc) wc.textContent = `$${whiteCost.toFixed(4)}`;
-        if (bc) bc.textContent = `$${blackCost.toFixed(4)}`;
+        if (wc) wc.textContent = `€${whiteCost.toFixed(4)}`;
+        if (bc) bc.textContent = `€${blackCost.toFixed(4)}`;
 
         rebuildMoveHistory(Array.isArray(state.moves) ? state.moves : []);
 
@@ -248,8 +257,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 winnerText.innerHTML = `<strong class="text-black dark:text-gray-100">Game canceled.</strong> Match canceled due to no response.`;
                 if (winnerReason) winnerReason.textContent = termination;
                 winnerContainer.style.display = 'block';
+                
+                // Also update mobile version
+                const winnerTextMobile = document.getElementById('winner-text-mobile');
+                const winnerReasonMobile = document.getElementById('winner-reason-mobile');
+                const winnerContainerMobile = document.getElementById('winner-container-mobile');
+                if (winnerTextMobile) winnerTextMobile.innerHTML = `<strong class="text-black dark:text-gray-100">Game canceled.</strong> Match canceled due to no response.`;
+                if (winnerReasonMobile) winnerReasonMobile.textContent = termination;
+                if (winnerContainerMobile) winnerContainerMobile.style.display = 'block';
+                
                 isGameRunning = false;
                 startButton.disabled = false;
+                if (startButtonMobile) startButtonMobile.disabled = false;
                 return;
             }
             if (result === '1-0') {
@@ -261,8 +280,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (winnerReason) winnerReason.textContent = termination || '';
             winnerContainer.style.display = 'block';
+            
+            // Also update mobile version
+            const winnerTextMobile = document.getElementById('winner-text-mobile');
+            const winnerReasonMobile = document.getElementById('winner-reason-mobile');
+            const winnerContainerMobile = document.getElementById('winner-container-mobile');
+            if (winnerTextMobile) winnerTextMobile.innerHTML = winnerText.innerHTML;
+            if (winnerReasonMobile) winnerReasonMobile.textContent = termination || '';
+            if (winnerContainerMobile) winnerContainerMobile.style.display = 'block';
+            
             isGameRunning = false;
             startButton.disabled = false;
+            if (startButtonMobile) startButtonMobile.disabled = false;
 
             // Lock the eval bar to the winner on checkmate to avoid any flip
             try {
@@ -340,6 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			resetForNewGame();
         
         startButton.disabled = true;
+        if (startButtonMobile) startButtonMobile.disabled = true;
         isGameRunning = true;
 
         try {
@@ -369,6 +399,7 @@ document.addEventListener('DOMContentLoaded', () => {
             winnerText.textContent = 'Error starting game. Please try again.';
             winnerText.style.display = 'block';
             startButton.disabled = false;
+            if (startButtonMobile) startButtonMobile.disabled = false;
             isGameRunning = false;
         }
     });
@@ -400,6 +431,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 winnerContainer.style.display = 'block';
                 isGameRunning = false;
                 startButton.disabled = false;
+                if (startButtonMobile) startButtonMobile.disabled = false;
                 return;
             }
 
@@ -504,7 +536,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     otherPanel.querySelectorAll('.llm-option').forEach(opt => {
                         if (opt.dataset.llmId === llmId) {
                             opt.classList.add('text-gray-400', 'dark:text-zinc-600', 'cursor-not-allowed');
-                            opt.classList.remove('text-gray-900', 'dark:text-gray-100', 'hover:bg-indigo-600', 'hover:text-white');
+                            opt.classList.remove('text-gray-900', 'dark:text-gray-100', 'hover:bg-green-50', 'dark:hover:bg-green-900/20', 'hover:text-green-700', 'dark:hover:text-green-300');
                         } else {
                             // Respect deactivated styling if present
                             opt.classList.remove('cursor-not-allowed');
@@ -513,7 +545,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 opt.classList.remove('text-gray-900', 'dark:text-gray-100');
                             } else {
                                 opt.classList.remove('text-gray-400', 'dark:text-zinc-500', 'dark:text-zinc-600');
-                                opt.classList.add('text-gray-900', 'dark:text-gray-100', 'hover:bg-indigo-600', 'hover:text-white');
+                                opt.classList.add('text-gray-900', 'dark:text-gray-100', 'hover:bg-green-50', 'dark:hover:bg-green-900/20', 'hover:text-green-700', 'dark:hover:text-green-300');
                             }
                         }
                     });
@@ -589,12 +621,12 @@ document.addEventListener('DOMContentLoaded', () => {
             whiteTime += gameData.latency;
             whiteCost += gameData.cost;
             document.getElementById('white-time').textContent = `${whiteTime.toFixed(2)}s`;
-            document.getElementById('white-cost').textContent = `$${whiteCost.toFixed(4)}`;
+            document.getElementById('white-cost').textContent = `€${whiteCost.toFixed(4)}`;
         } else {
             blackTime += gameData.latency;
             blackCost += gameData.cost;
             document.getElementById('black-time').textContent = `${blackTime.toFixed(2)}s`;
-            document.getElementById('black-cost').textContent = `$${blackCost.toFixed(4)}`;
+            document.getElementById('black-cost').textContent = `€${blackCost.toFixed(4)}`;
         }
     }
 
