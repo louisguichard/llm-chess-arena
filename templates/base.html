@@ -42,9 +42,8 @@
 <body class="bg-gray-100 dark:bg-zinc-950 text-gray-900 dark:text-gray-100 font-sans">
     <header class="sticky top-0 z-40 w-full backdrop-blur-sm bg-white/95 dark:bg-zinc-900/95 border-b border-gray-200/70 dark:border-zinc-800/70">
       <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="flex items-center justify-center h-16">
-          <div class="flex items-center gap-8 sm:gap-16 md:gap-24 lg:gap-32 xl:gap-40">
-            <div class="flex items-center gap-3">
+          <div class="grid grid-cols-3 items-center h-16">
+            <div class="flex items-center gap-3 justify-self-start">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/>
                 <line x1="13" x2="19" y1="19" y2="13"/>
@@ -55,20 +54,26 @@
                 <line x1="7" x2="4" y1="17" y2="20"/>
                 <line x1="3" x2="5" y1="19" y2="21"/>
               </svg>
-              <span class="font-bold text-lg sm:text-xl tracking-tight">LLM Chess Arena</span>
+              <span class="font-bold text-lg sm:text-xl tracking-tight whitespace-nowrap">LLM Chess Arena</span>
               <span class="hidden sm:inline-flex items-center rounded-full bg-green-100/70 dark:bg-green-900/40 px-2 py-0.5 text-[10px] font-medium text-green-700 dark:text-green-300 border border-green-200/70 dark:border-green-800/60">Preview</span>
             </div>
 
-            <nav class="hidden md:flex items-center gap-1 rounded-full bg-white/80 dark:bg-zinc-800/80 border border-gray-200/70 dark:border-zinc-700/60 px-1.5 py-1 shadow-sm">
+            <nav class="hidden md:flex items-center gap-1 justify-self-center rounded-full bg-white/80 dark:bg-zinc-800/80 border border-gray-200/70 dark:border-zinc-700/60 px-1.5 py-1 shadow-sm">
               <button data-page="battle" class="nav-link px-4 py-2 rounded-full text-sm font-medium transition-colors text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 hover:text-green-700 dark:hover:text-green-300">Battle</button>
               <button data-page="leaderboard" class="nav-link px-4 py-2 rounded-full text-sm font-medium transition-colors text-gray-600 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/30 hover:text-green-700 dark:hover:text-green-300">Leaderboard</button>
             </nav>
 
-            <button id="theme-toggle" type="button" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm border border-gray-200/70 dark:border-zinc-700/60 bg-white/60 dark:bg-zinc-800/60 text-gray-600 dark:text-gray-300 hover:bg-green-50/80 dark:hover:bg-zinc-700/60 shadow-sm">
-              <i id="icon-light" data-lucide="sun" class="w-4 h-4"></i>
-              <i id="icon-dark" data-lucide="moon" class="w-4 h-4 hidden"></i>
-              <span class="hidden sm:inline" id="theme-label">Light</span>
-            </button>
+            <div class="flex items-center gap-2 justify-self-end">
+              <button id="theme-toggle" type="button" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm border border-gray-200/70 dark:border-zinc-700/60 bg-white/60 dark:bg-zinc-800/60 text-gray-600 dark:text-gray-300 hover:bg-green-50/80 dark:hover:bg-zinc-700/60 shadow-sm">
+                <i id="icon-light" data-lucide="sun" class="w-4 h-4 hidden"></i>
+                <i id="icon-dark" data-lucide="moon" class="w-4 h-4"></i>
+                <span class="hidden sm:inline" id="theme-label">Dark</span>
+              </button>
+              <a href="https://github.com/louisguichard/llm-chess-arena" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm border border-gray-200/70 dark:border-zinc-700/60 bg-white/60 dark:bg-zinc-800/60 text-gray-600 dark:text-gray-300 hover:bg-green-50/80 dark:hover:bg-zinc-700/60 shadow-sm">
+                <i data-lucide="github" class="w-4 h-4"></i>
+                <span class="hidden sm:inline">Source</span>
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -97,9 +102,10 @@
 
             function applyTheme(mode) {
                 document.documentElement.classList.toggle('dark', mode === 'dark');
-                iconLight.classList.toggle('hidden', mode !== 'light');
-                iconDark.classList.toggle('hidden', mode !== 'dark');
-                if (label) label.textContent = mode.charAt(0).toUpperCase() + mode.slice(1);
+                // Show the next theme (sun when dark, moon when light)
+                iconLight.classList.toggle('hidden', mode !== 'dark');
+                iconDark.classList.toggle('hidden', mode !== 'light');
+                if (label) label.textContent = mode === 'light' ? 'Dark' : 'Light';
             }
 
             function initTheme() {
