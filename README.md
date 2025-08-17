@@ -1,41 +1,72 @@
-## LLM Chess Arena
+# LLM Chess Arena
 
-Run chess battles between LLMs and calculate ELO ratings.
+**The AI chess leaderboard: pick your match, watch the battle, and follow the live rankings! Try it live at [chess.louisguichard.fr](https://chess.louisguichard.fr/)! 🔥**
 
-### 1) Setup (simple)
-- Install Python 3.9+
-- Create `.env` with your key:
-  - `OPENROUTER_API_KEY=YOUR_KEY_HERE`
-- List model IDs in `models.txt` (one per line)
-- Install dependencies:
-  - `pip install -r requirements.txt`
+![LLM Chess Arena Screenshot](screenshot.png)
 
-### 2) Web UI (play one game and see moves live)
-Run the app:
+## What is This?
 
-```
+This project is a simple application for pitting different Large Language Models (LLMs) against each other in games of chess. It uses the OpenRouter API to access a variety of models. You can run it locally through a web interface to watch single matches and see ELO ratings.
+
+## Features
+
+-   **Web Interface**: Watch LLMs play each other in real-time.
+-   **ELO Rating System**: Automatically calculates and updates ELO ratings for each model.
+-   **Extensible**: Easily add new models by listing them in a text file.
+-   **Game History**: Saves game data (in PGN format) to Google Cloud Storage.
+
+## How It Works
+
+The project is composed of a few key components:
+
+-   `client.py`: Handles communication with the OpenRouter API using the OpenAI SDK.
+-   `prompts.py`: Contains the system and user prompts used to instruct the LLMs on how to play chess.
+-   `match.py`: Manages the game logic, playing out a match move by move.
+-   `app.py`: A lightweight Flask server that streams the game moves to the web interface using Server-Sent Events (SSE).
+-   `ratings.py`: Implements the ELO rating calculation and updates.
+-   `gcp.py`: Manages reading and writing game data and ratings to Google Cloud Storage.
+
+## Getting Started
+
+Follow these steps to get the LLM Chess Arena running on your local machine.
+
+### 1. Prerequisites
+
+-   Python 3.9 or higher.
+-   A Google Cloud Storage bucket for saving game data and ratings.
+-   An OpenRouter API key.
+
+### 2. Installation & Setup
+
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/your-username/llm-chess-arena.git
+    cd llm-chess-arena
+    ```
+
+2.  **Create a `.env` file** in the root directory and add your OpenRouter API key:
+    ```
+    OPENROUTER_API_KEY=YOUR_KEY_HERE
+    ```
+
+3.  **Configure Google Cloud Storage:**
+    - Open `gcp.py` and set your `GCS_BUCKET_NAME`.
+
+4.  **List your desired models:**
+    - Open `models.txt` and add the model IDs you want to use, one per line. You can find model IDs on the [OpenRouter documentation](https://openrouter.ai/docs).
+
+5.  **Install the dependencies:**
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+### 3. Run the Web Interface
+
+To watch a single game live, run the Flask application:
+
+```bash
 python app.py
 ```
 
-Open `http://127.0.0.1:5000`, pick two models, click “Start Battle”.
-
-Notes:
-- Games are saved to Google Cloud Storage as PGN files (bucket name is set in `gcp.py`).
-- Ratings are also saved to GCS (`ratings.json`).
-
-### 3) CLI (run a small tournament)
-
-```
-python main.py --matches 5
-```
-
-This plays random pairings and updates Elo ratings.
-
-### How it works (very short)
-- `client.py`: talks to OpenRouter using the OpenAI SDK
-- `prompts.py`: simple system/user prompts for chess
-- `match.py`: plays a game, move by move
-- `app.py`: tiny Flask server streaming moves to the browser (no threads, simple SSE)
-- `ratings.py`: Elo update and stats
-- `gcp.py`: read/write JSON and PGN to Google Cloud Storage
+Then, open your web browser and navigate to `http://1227.0.0.1:5000`. You'll be able to select two models and start a battle.
 
