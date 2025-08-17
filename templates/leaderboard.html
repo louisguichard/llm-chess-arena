@@ -4,24 +4,32 @@
         <svg class="w-8 h-8 text-green-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg>
         <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Leaderboard</h1>
     </div>
+    <p class="text-center text-sm text-gray-600 dark:text-gray-400 mb-4">Top models by ELO on this arena. Toggle to show only open-source models.</p>
+
+    <div class="flex items-center justify-center mb-4">
+        <button id="filter-open-source" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs border border-green-300 bg-white text-green-700 hover:bg-green-50 dark:bg-zinc-900 dark:text-green-300 dark:border-green-800">
+            <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+            <span>Open-source filter</span>
+        </button>
+    </div>
     <div class="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-700 shadow-sm overflow-hidden">
         <!-- Desktop Table -->
         <div class="hidden md:block overflow-x-auto">
             <table class="w-full">
                 <thead>
                     <tr class="border-b border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800/50">
-                        <th class="px-4 py-4 text-center font-semibold text-sm text-gray-600 dark:text-gray-300">#</th>
-                        <th class="px-4 py-4 text-left font-semibold text-sm text-gray-600 dark:text-gray-300">Player</th>
-                        <th class="px-4 py-4 text-right font-semibold text-sm text-gray-600 dark:text-gray-300">ELO</th>
-                        <th class="px-4 py-4 text-center font-semibold text-sm text-gray-600 dark:text-gray-300">Games</th>
-                        <th class="px-4 py-4 text-center font-semibold text-sm text-gray-600 dark:text-gray-300">Win %</th>
-                        <th class="px-4 py-4 text-center font-semibold text-sm text-gray-600 dark:text-gray-300">Time/Move</th>
-                        <th class="px-4 py-4 text-center font-semibold text-sm text-gray-600 dark:text-gray-300">Cost/Game</th>
+                        <th class="sticky top-0 z-10 px-4 py-4 text-center font-semibold text-xs uppercase tracking-wide text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-zinc-800/50">#</th>
+                        <th class="sticky top-0 z-10 px-4 py-4 text-left font-semibold text-xs uppercase tracking-wide text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-zinc-800/50">Player</th>
+                        <th class="sticky top-0 z-10 px-4 py-4 text-right font-semibold text-xs uppercase tracking-wide text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-zinc-800/50">ELO</th>
+                        <th class="sticky top-0 z-10 px-4 py-4 text-center font-semibold text-xs uppercase tracking-wide text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-zinc-800/50">Games</th>
+                        <th class="sticky top-0 z-10 px-4 py-4 text-center font-semibold text-xs uppercase tracking-wide text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-zinc-800/50">W/D/L</th>
+                        <th class="sticky top-0 z-10 px-4 py-4 text-center font-semibold text-xs uppercase tracking-wide text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-zinc-800/50">Time/Move</th>
+                        <th class="sticky top-0 z-10 px-4 py-4 text-center font-semibold text-xs uppercase tracking-wide text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-zinc-800/50">Cost/Game</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for llm in leaderboard_data %}
-                        <tr class="border-b border-gray-200 dark:border-zinc-800 last:border-b-0 hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors">
+                        <tr class="border-b border-gray-200 dark:border-zinc-800 last:border-b-0 hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors odd:bg-white even:bg-gray-50 dark:odd:bg-transparent dark:even:bg-zinc-800/30" data-name="{{ llm.name|lower }}" data-provider="{{ llm.provider|lower }}" data-tags="{{ llm.tags|join(' ')|lower }}">
                             <td class="px-4 py-4 text-center font-medium text-gray-500 dark:text-gray-400">{{ loop.index }}</td>
                             <td class="px-4 py-4">
                                 <div class="flex items-center">
@@ -56,10 +64,21 @@
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-4 py-4 text-right font-mono text-lg font-semibold text-gray-800 dark:text-gray-200">{{ llm.elo | round | int }}</td>
+                            <td class="px-4 py-4 text-right">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 dark:bg-zinc-800 font-mono text-sm font-semibold text-gray-800 dark:text-gray-200">{{ llm.elo | round | int }}</span>
+                            </td>
                             <td class="px-4 py-4 text-center font-mono text-gray-600 dark:text-gray-300">{{ llm.matchesPlayed }}</td>
-                            <td class="px-4 py-4 text-center font-mono text-gray-600 dark:text-gray-300">
-                                {% if llm.matchesPlayed > 0 %}{{ llm.winRate }}%{% else %}-{% endif %}
+                            <td class="px-4 py-4 text-center">
+                                {% if llm.matchesPlayed > 0 %}
+                                    {% set wp = (llm.wins / llm.matchesPlayed * 100) | round | int %}
+                                    {% set dp = (llm.draws / llm.matchesPlayed * 100) | round | int %}
+                                    {% set lp = (llm.losses / llm.matchesPlayed * 100) | round | int %}
+                                    <div class="inline-flex items-center gap-1 whitespace-nowrap">
+                                        <span class="px-1 py-0 rounded bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 font-mono text-xs">{{ wp }}%</span>
+                                        <span class="px-1 py-0 rounded bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 font-mono text-xs">{{ dp }}%</span>
+                                        <span class="px-1 py-0 rounded bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 font-mono text-xs">{{ lp }}%</span>
+                                    </div>
+                                {% else %}-{% endif %}
                             </td>
                             <td class="px-4 py-4 text-center font-mono text-gray-600 dark:text-gray-300">
                                 {% if llm.moves > 0 %}{{ (llm.avgTimePerMove) | round | int }}s{% else %}-{% endif %}
@@ -78,15 +97,15 @@
             <table class="w-full">
                 <thead>
                     <tr class="border-b border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800/50">
-                        <th class="px-2 py-3 text-center font-semibold text-xs text-gray-600 dark:text-gray-300">#</th>
-                        <th class="px-3 py-3 text-left font-semibold text-xs text-gray-600 dark:text-gray-300">Player</th>
-                        <th class="px-2 py-3 text-center font-semibold text-xs text-gray-600 dark:text-gray-300">ELO</th>
+                        <th class="sticky top-0 z-10 px-2 py-3 text-center font-semibold text-[11px] uppercase tracking-wide text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-zinc-800/50">#</th>
+                        <th class="sticky top-0 z-10 px-3 py-3 text-left font-semibold text-[11px] uppercase tracking-wide text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-zinc-800/50">Player</th>
+                        <th class="sticky top-0 z-10 px-2 py-3 text-center font-semibold text-[11px] uppercase tracking-wide text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-zinc-800/50">ELO</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for llm in leaderboard_data %}
-                        <tr class="border-b border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors">
-                            <td class="px-2 py-3 text-center font-medium text-gray-500 dark:text-gray-400 text-sm">{{ loop.index }}</td>
+                        <tr class="border-b border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors odd:bg-white even:bg-gray-50 dark:odd:bg-transparent dark:even:bg-zinc-800/30" data-name="{{ llm.name|lower }}" data-provider="{{ llm.provider|lower }}" data-tags="{{ llm.tags|join(' ')|lower }}">
+                            <td class="px-2 py-3 text-center font-medium text-gray-500 dark:text-gray-400 text-sm">{% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}{{ loop.index }}{% endif %}</td>
                             <td class="px-3 py-3 mobile-toggle cursor-pointer">
                                 <div class="flex items-center min-w-0">
                                     <div class="w-6 h-6 mr-2 flex-shrink-0">
@@ -114,7 +133,9 @@
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-2 py-3 text-center font-mono text-base font-semibold text-gray-800 dark:text-gray-200">{{ llm.elo | round | int }}</td>
+                            <td class="px-2 py-3 text-center">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 dark:bg-zinc-800 font-mono text-sm font-semibold text-gray-800 dark:text-gray-200">{{ llm.elo | round | int }}</span>
+                            </td>
                         </tr>
                         <tr class="mobile-details hidden border-b border-gray-200 dark:border-zinc-800">
                             <td colspan="3" class="px-3 py-3 bg-gray-50 dark:bg-zinc-800/30">
@@ -124,8 +145,17 @@
                                         <div class="text-gray-500 dark:text-gray-400">Games</div>
                                     </div>
                                     <div>
-                                        <div class="font-mono text-sm font-medium text-gray-700 dark:text-gray-300">{% if llm.matchesPlayed > 0 %}{{ llm.winRate }}%{% else %}-{% endif %}</div>
-                                        <div class="text-gray-500 dark:text-gray-400">Win</div>
+                                        <div class="inline-flex items-center gap-1 whitespace-nowrap">
+                                            {% if llm.matchesPlayed > 0 %}
+                                                {% set wp = (llm.wins / llm.matchesPlayed * 100) | round | int %}
+                                                {% set dp = (llm.draws / llm.matchesPlayed * 100) | round | int %}
+                                                {% set lp = (llm.losses / llm.matchesPlayed * 100) | round | int %}
+                                                <span class="px-1 py-0 rounded bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 font-mono text-xs">{{ wp }}%</span>
+                                                <span class="px-1 py-0 rounded bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 font-mono text-xs">{{ dp }}%</span>
+                                                <span class="px-1 py-0 rounded bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 font-mono text-xs">{{ lp }}%</span>
+                                            {% else %}-{% endif %}
+                                        </div>
+                                        <div class="text-gray-500 dark:text-gray-400">W/D/L</div>
                                     </div>
                                     <div>
                                         <div class="font-mono text-sm font-medium text-gray-700 dark:text-gray-300">{% if llm.moves > 0 %}{{ (llm.avgTimePerMove) | round | int }}s{% else %}-{% endif %}</div>
@@ -147,3 +177,58 @@
         <strong>Note:</strong> These ratings are specific to this leaderboard and are not comparable to FIDE, Lichess, or Chess.com ratings. They only indicate relative performance between models here.
     </p>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toggle = document.getElementById('filter-open-source');
+    const desktopRows = Array.from(document.querySelectorAll('.hidden.md\\:block tbody tr'));
+    const mobileRows = Array.from(document.querySelectorAll('.md\\:hidden tbody tr'));
+
+    let openOnly = false;
+
+    function hasOpenSource(row) {
+        const tags = (row.getAttribute('data-tags') || '');
+        return tags.split(' ').includes('open-source');
+    }
+
+    function applyFilter() {
+        // Desktop rows
+        desktopRows.forEach(row => {
+            const ok = !openOnly || hasOpenSource(row);
+            row.style.display = ok ? '' : 'none';
+        });
+
+        // Mobile rows (pairing data + details)
+        for (let i = 0; i < mobileRows.length; i++) {
+            const row = mobileRows[i];
+            if (!row.classList.contains('mobile-details')) {
+                const details = mobileRows[i + 1] && mobileRows[i + 1].classList.contains('mobile-details') ? mobileRows[i + 1] : null;
+                const ok = !openOnly || hasOpenSource(row);
+                row.style.display = ok ? '' : 'none';
+                if (details) {
+                    if (!ok) {
+                        details.classList.add('hidden');
+                    }
+                    // Do not force inline display when ok; let the click handler control visibility
+                    details.style.display = '';
+                }
+            }
+        }
+    }
+
+    if (toggle) {
+        toggle.addEventListener('click', () => {
+            openOnly = !openOnly;
+            toggle.classList.toggle('bg-green-600', openOnly);
+            toggle.classList.toggle('text-white', openOnly);
+            toggle.classList.toggle('border-green-600', openOnly);
+            toggle.classList.toggle('hover:bg-green-50', !openOnly);
+            toggle.classList.toggle('hover:bg-green-600/90', openOnly);
+            toggle.setAttribute('aria-checked', openOnly ? 'true' : 'false');
+            applyFilter();
+        });
+    }
+
+    applyFilter();
+});
+</script>
