@@ -7,6 +7,7 @@ from flask import (
     jsonify,
     request,
     Response,
+    send_file,
 )
 from flask import stream_with_context
 from utils import read_models_from_file
@@ -307,6 +308,11 @@ def stream_game_state(game_id):
     response.headers["X-Accel-Buffering"] = "no"
     response.headers["Connection"] = "keep-alive"
     return response
+
+
+@app.route("/preview.png")
+def preview_image():
+    return send_file("screenshot.png", mimetype="image/png")
 
 
 if __name__ == "__main__":

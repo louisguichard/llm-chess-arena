@@ -37,6 +37,29 @@
         .dark .piece-black { color: #111; }
         .dark .piece-white { color: #fff; text-shadow: 0 0 1px #000; }
     </style>
+    
+    <!-- SEO -->
+    <meta name="description" content="The AI chess leaderboard. Pick your match, watch the battle, follow live rankings.">
+    <meta name="keywords" content="AI chess, LLM chess, chess AI, chess battle, leaderboard, live rankings, Elo, OpenRouter, GPT chess, chess arena">
+    <meta name="robots" content="index,follow">
+    <link rel="canonical" href="{{ request.url }}">
+
+    <!-- Open Graph (LinkedIn, Facebook) -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="LLM Chess Arena">
+    <meta property="og:title" content="LLM Chess Arena">
+    <meta property="og:description" content="The AI chess leaderboard. Pick your match, watch the battle, follow live rankings.">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta property="og:image" content="{{ url_for('preview_image', _external=True) }}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="LLM Chess Arena">
+    <meta name="twitter:description" content="The AI chess leaderboard. Pick your match, watch the battle, follow live rankings.">
+    <meta name="twitter:image" content="{{ url_for('preview_image', _external=True) }}">
+    <meta name="theme-color" content="#16a34a">
     {% block head %}{% endblock %}
 </head>
 <body class="bg-gray-100 dark:bg-zinc-950 text-gray-900 dark:text-gray-100 font-sans">
