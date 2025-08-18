@@ -84,7 +84,7 @@
                                 {% if llm.moves > 0 %}{{ (llm.avgTimePerMove) | round | int }}s{% else %}-{% endif %}
                             </td>
                             <td class="px-4 py-4 text-center font-mono text-gray-600 dark:text-gray-300">
-                                {% if llm.moves > 0 %}€{{ "%.1f"|format((llm.avgCostPerMove * 50) | round(1)) }}{% else %}-{% endif %}
+                                {% if llm.id == 'x-ai/grok-4' %}-{% elif llm.moves > 0 %}€{{ "%.1f"|format((llm.avgCostPerMove * 50) | round(1)) }}{% else %}-{% endif %}
                             </td>
                         </tr>
                     {% endfor %}
@@ -162,7 +162,7 @@
                                         <div class="text-gray-500 dark:text-gray-400">Time/Move</div>
                                     </div>
                                     <div>
-                                        <div class="font-mono text-sm font-medium text-gray-700 dark:text-gray-300">{% if llm.moves > 0 %}€{{ "%.1f"|format((llm.avgCostPerMove * 50) | round(1)) }}{% else %}-{% endif %}</div>
+                                        <div class="font-mono text-sm font-medium text-gray-700 dark:text-gray-300">{% if llm.id == 'x-ai/grok-4' %}-{% elif llm.moves > 0 %}€{{ "%.1f"|format((llm.avgCostPerMove * 50) | round(1)) }}{% else %}-{% endif %}</div>
                                         <div class="text-gray-500 dark:text-gray-400">Cost/Game</div>
                                     </div>
                                 </div>
