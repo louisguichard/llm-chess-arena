@@ -39,7 +39,7 @@
                                     <div class="flex-grow">
                                         <p class="font-semibold text-black dark:text-gray-100">{{ llm.name }}</p>
                                         <div class="flex items-center gap-2">
-                                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ llm.provider }}</p>
+                                            <p class="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ llm.provider }}</p>
                                             {% if llm.tags %}
                                                 {% set tag_explanations = {
                                                     'Fast': 'Each move usually takes less than 20s.',
@@ -114,7 +114,7 @@
                                     <div class="flex-grow min-w-0">
                                         <p class="font-semibold text-black dark:text-gray-100 text-sm truncate">{{ llm.name }}</p>
                                         <div class="flex items-center gap-1">
-                                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ llm.provider }}</p>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ llm.provider }}</p>
                                             {% if llm.tags %}
                                                 <div class="flex gap-1 ml-1">
                                                     {% for tag in llm.tags %}
