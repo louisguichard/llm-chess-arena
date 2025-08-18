@@ -29,7 +29,6 @@ x-ai/grok-3, Grok 3, [Expensive]
 meta-llama/llama-4-maverick, Llama 4 Maverick, [Open-source, Fast]
 
 # Mistral AI
-mistralai/mixtral-8x7b-instruct, Mixtral 8x7B Instruct, [Open-source]
 mistralai/mistral-medium-3.1, Mistral Medium 3.1
 
 # DeepSeek
@@ -38,6 +37,4 @@ deepseek/deepseek-chat-v3-0324:free, DeepSeek V3, [Open-source]
 
 # Others
 qwen/qwen3-30b-a3b, Qwen3 30B, [Open-source]
-qwen/qwen3-235b-a22b:free, Qwen3 235B, [Open-source]
-qwen/qwen3-235b-a22b-thinking-2507, Qwen3 235B Thinking, [Open-source]
 moonshotai/kimi-k2:free, Kimi K2, [Open-source]
