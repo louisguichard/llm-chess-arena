@@ -120,12 +120,16 @@ class LLMClient:
             latency = time.time() - start
             if content:
                 try:
-                    # Cost should be in the last chunk
-                    cost = chunk.usage.cost
-                    upstream_cost = (
-                        chunk.usage.cost_details.get("upstream_inference_cost") or 0
-                    )
-                    total_cost = cost + upstream_cost
+                    if self.model == "x-ai/grok-4":
+                        cost = 0
+                        total_cost, upstream_cost = 0, 0
+                    else:
+                        # Cost should be in the last chunk
+                        cost = chunk.usage.cost
+                        upstream_cost = (
+                            chunk.usage.cost_details.get("upstream_inference_cost") or 0
+                        )
+                        total_cost = cost + upstream_cost
                 except Exception as e:
                     log.warning(f"💰 Error getting cost from {self.model}: {e}")
                     total_cost, upstream_cost = 0, 0
