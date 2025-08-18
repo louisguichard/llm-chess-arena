@@ -26,6 +26,17 @@ games = {}
 ratings = RatingsTable()
 
 
+@app.after_request
+def add_static_cache_headers(response):
+    try:
+        # Cache only immutable piece assets aggressively (versioned via ?v=...)
+        if request.path.startswith("/static/pieces/"):
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    except Exception:
+        pass
+    return response
+
+
 @app.route("/")
 @app.route("/battle")
 @app.route("/leaderboard")

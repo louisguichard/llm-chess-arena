@@ -12,4 +12,4 @@ EXPOSE 8080
 
 ENV PORT 8080
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1", "--threads", "32", "--timeout", "600", "--log-level", "debug", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1", "--threads", "128", "--timeout", "600", "--log-level", "debug", "app:app"]
