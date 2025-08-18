@@ -89,16 +89,14 @@ class LLMClient:
                 model_to_call = self.model
 
             # Restrict to providers that support response_format for this model
-            if self.model == "x-ai/grok-4":
-                providers = []
-            else:
+            if self.model != "x-ai/grok-4":
                 providers = self.get_providers(model_to_call)
-            if providers:
-                extra_body["provider"] = {"only": providers}
-            else:
-                log.warning(
-                    f"No provider supports response_format for {model_to_call}. Proceeding without choosing a provider."
-                )
+                if providers:
+                    extra_body["provider"] = {"only": providers}
+                else:
+                    log.warning(
+                        f"No provider supports response_format for {model_to_call}. Proceeding without choosing a provider."
+                    )
             log.info(f"Sending request to {model_to_call}")
             log.debug(f"Detailed prompt sent to {model_to_call}: {messages}")
             start = time.time()
