@@ -57,7 +57,9 @@ def index():
                 "provider": model_id.split("/")[0] or "Unknown",
                 "elo": ratings.get(model_id),
                 "tags": tags,
-                "deactivated": any((t or "").lower() == "deactivated" for t in tags),
+                "deactivated": any(
+                    (t or "").lower() in ("deactivated", "expensive") for t in tags
+                ),
             }
         )
 
@@ -152,6 +154,20 @@ def start_game():
         return jsonify(
             {
                 "error": f"{black_model_data.get('name', black_model_id)} is deactivated and cannot be used."
+            }
+        ), 400
+
+    if "Expensive" in white_model_data.get("tags", []):
+        return jsonify(
+            {
+                "error": f"{white_model_data.get('name', white_model_id)} is expensive and cannot be used."
+            }
+        ), 400
+
+    if "Expensive" in black_model_data.get("tags", []):
+        return jsonify(
+            {
+                "error": f"{black_model_data.get('name', black_model_id)} is expensive and cannot be used."
             }
         ), 400
 
