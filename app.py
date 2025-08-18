@@ -41,6 +41,10 @@ def add_static_cache_headers(response):
 @app.route("/battle")
 @app.route("/leaderboard")
 def index():
+    try:
+        ratings.load_ratings()
+    except Exception:
+        pass
     models = read_models_from_file(MODELS_FILE)
 
     # Prepare data for battle page
@@ -215,6 +219,10 @@ def play_move(game_id):
             move_result = game.play_next_move(max_retries=2)
 
             if move_result and move_result.get("is_over"):
+                try:
+                    ratings.load_ratings()
+                except Exception:
+                    pass
                 total_moves = len(game.board.move_stack)
                 white_moves = (total_moves + 1) // 2
                 black_moves = total_moves // 2
