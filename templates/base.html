@@ -36,6 +36,24 @@
         /* Ensure chess pieces keep their intended colors in dark mode */
         .dark .piece-black { color: #111; }
         .dark .piece-white { color: #fff; text-shadow: 0 0 1px #000; }
+        /* Instant tooltips using data-tooltip */
+        .has-tooltip { position: relative; }
+        .has-tooltip::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            left: 0.75rem;
+            top: 0;
+            transform: translateY(-100%);
+            background: rgba(0,0,0,0.85);
+            color: #fff;
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+        }
+        .has-tooltip:hover::after { opacity: 1; }
     </style>
     
     <!-- SEO -->
@@ -96,6 +114,10 @@
                 <i data-lucide="github" class="w-4 h-4"></i>
                 <span class="hidden sm:inline">Source</span>
               </a>
+              <button id="api-keys-btn" type="button" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm border border-gray-200/70 dark:border-zinc-700/60 bg-white/60 dark:bg-zinc-800/60 text-gray-600 dark:text-gray-300 hover:bg-green-50/80 dark:hover:bg-zinc-700/60 shadow-sm" title="Set your API keys to unlock expensive models">
+                <i data-lucide="key" class="w-4 h-4"></i>
+                <span class="hidden sm:inline">API keys</span>
+              </button>
             </div>
           </div>
         </div>
@@ -143,6 +165,185 @@
                 const next = current === 'light' ? 'dark' : 'light';
                 localStorage.setItem('theme', next);
                 applyTheme(next);
+            });
+
+            // Simple inline modal for API keys
+            const apiBtn = document.getElementById('api-keys-btn');
+            function ensureApiDialog() {
+                let dlg = document.getElementById('api-keys-dialog');
+                if (dlg) return dlg;
+                dlg = document.createElement('div');
+                dlg.id = 'api-keys-dialog';
+                dlg.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 hidden';
+                dlg.innerHTML = `
+                  <div class="w-full max-w-md rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-xl">
+                    <div class="p-4 border-b border-gray-200 dark:border-zinc-700 flex items-center justify-between">
+                      <h3 class="font-semibold">API keys</h3>
+                      <button id="api-keys-close" class="text-gray-500 hover:text-gray-800 dark:hover:text-gray-200">✕</button>
+                    </div>
+                    <div class="p-4 space-y-3">
+                      <div>
+                        <label class="block text-sm mb-1">OpenRouter API key</label>
+                        <input id="input-openrouter" type="password" class="w-full px-3 py-2 rounded-md border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800" placeholder="sk-or-v1-..." />
+                        <p class="text-xs text-gray-500 mt-1">Used for all the expensive models, except Grok 4.</p>
+                      </div>
+                      <div>
+                        <label class="block text-sm mb-1">xAI (Grok) API key</label>
+                        <input id="input-grok" type="password" class="w-full px-3 py-2 rounded-md border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800" placeholder="xai-..." />
+                        <p class="text-xs text-gray-500 mt-1">Used for Grok 4 only (not Grok 3).</p>
+                      </div>
+                      <div class="mt-2">
+                        <p class="text-xs font-semibold text-gray-600 dark:text-gray-300">Important notes</p>
+                        <ul class="list-disc pl-5 mt-1 space-y-1 text-xs text-gray-500">
+                          <li>Basic models never use your API keys — only expensive models do.</li>
+                          <li>Your API keys are stored locally in your browser and are sent to the server only when running an expensive model. They never persist server-side.</li>
+                          <li>GPT-5 can only be used via OpenRouter if you have previously connected your OpenAI account in your OpenRouter settings (Settings → Providers).</li>
+                        </ul>
+                      </div>
+                    </div>
+                    <div class="p-4 border-t border-gray-200 dark:border-zinc-700 flex items-center justify-end gap-2">
+                      <button id="api-keys-clear" class="px-3 py-1.5 rounded-md border border-gray-200 dark:border-zinc-700">Clear</button>
+                      <button id="api-keys-save" class="px-3 py-1.5 rounded-md bg-green-600 text-white">Save</button>
+                    </div>
+                  </div>
+                `;
+                document.body.appendChild(dlg);
+                return dlg;
+            }
+
+            function getKeys() {
+                let a = '';
+                let b = '';
+                try { a = localStorage.getItem('user_openrouter_api_key') || ''; } catch(e) {}
+                try { b = localStorage.getItem('user_grok_api_key') || ''; } catch(e) {}
+                return { openrouter: a, grok: b };
+            }
+
+            function setKeys(a, b) {
+                try {
+                    if (a) localStorage.setItem('user_openrouter_api_key', a); else localStorage.removeItem('user_openrouter_api_key');
+                    if (b) localStorage.setItem('user_grok_api_key', b); else localStorage.removeItem('user_grok_api_key');
+                } catch(e) {}
+            }
+
+            function updateExpensiveAvailability() {
+                const keys = getKeys();
+                const liList = Array.from(document.querySelectorAll('.player-selector-list .llm-option'));
+                document.querySelectorAll('.player-selector-list .llm-option').forEach(li => {
+                    const isExpensive = (li.dataset.expensive === 'true');
+                    if (!isExpensive) return;
+                    const modelId = li.dataset.llmId || '';
+                    const needsGrok = modelId === 'x-ai/grok-4';
+                    const hasKey = needsGrok ? !!keys.grok : !!keys.openrouter;
+                    const nameSpan = li.querySelector('span.block.truncate');
+                    if (hasKey) {
+                        // enable
+                        li.dataset.deactivated = 'false';
+                        li.classList.remove('text-gray-400', 'dark:text-zinc-500', 'dark:text-zinc-600', 'cursor-default', 'cursor-not-allowed', 'has-tooltip');
+                        li.classList.add('text-black', 'dark:text-gray-100', 'cursor-pointer', 'hover:bg-green-50', 'dark:hover:bg-green-900/20', 'hover:text-green-700', 'dark:hover:text-green-300');
+                        li.removeAttribute('data-tooltip');
+                        if (nameSpan) {
+                            nameSpan.classList.remove('text-gray-400', 'dark:text-zinc-500');
+                            nameSpan.classList.add('text-black', 'dark:text-gray-100');
+                        }
+                    } else {
+                        // keep disabled
+                        li.dataset.deactivated = 'true';
+                        li.classList.add('text-gray-400', 'dark:text-zinc-500', 'cursor-default', 'cursor-not-allowed', 'has-tooltip');
+                        li.classList.remove('text-black', 'dark:text-gray-100', 'cursor-pointer', 'hover:bg-green-50', 'dark:hover:bg-green-900/20', 'hover:text-green-700', 'dark:hover:text-green-300');
+                        li.setAttribute('data-tooltip', needsGrok ? 'Requires xAI (Grok) API key' : 'Requires OpenRouter API key');
+                        if (nameSpan) {
+                            nameSpan.classList.add('text-gray-400', 'dark:text-zinc-500');
+                            nameSpan.classList.remove('text-black', 'dark:text-gray-100');
+                        }
+                    }
+                });
+
+                // Reorder: keep original order, but move locked items (deactivated or expensive without key) to the end
+                try {
+                    const groups = Array.from(document.querySelectorAll('.player-selector-list'));
+                    groups.forEach(ul => {
+                        const items = Array.from(ul.querySelectorAll('.llm-option'));
+                        // Capture original order indices once
+                        items.forEach((li, idx) => {
+                            if (!li.dataset.initialIndex) li.dataset.initialIndex = String(idx);
+                        });
+                        const active = [];
+                        const inactive = [];
+                        items.forEach(li => {
+                            const isExpensive = (li.dataset.expensive === 'true');
+                            const modelId = li.dataset.llmId || '';
+                            const needsGrok = modelId === 'x-ai/grok-4';
+                            const hasKey = needsGrok ? !!keys.grok : !!keys.openrouter;
+                            const isTrulyDeactivated = (!isExpensive) && (li.dataset.deactivated === 'true');
+                            const isLocked = (isExpensive && !hasKey) || isTrulyDeactivated;
+                            if (isLocked) inactive.push(li); else active.push(li);
+                        });
+                        active.sort((a, b) => Number(a.dataset.initialIndex) - Number(b.dataset.initialIndex));
+                        inactive.sort((a, b) => Number(a.dataset.initialIndex) - Number(b.dataset.initialIndex));
+                        active.forEach(li => ul.appendChild(li));
+                        inactive.forEach(li => ul.appendChild(li));
+                    });
+                } catch (e) {}
+            }
+
+            apiBtn.addEventListener('click', () => {
+                const dlg = ensureApiDialog();
+                const keys = getKeys();
+                const inA = dlg.querySelector('#input-openrouter');
+                const inB = dlg.querySelector('#input-grok');
+                inA.value = keys.openrouter || '';
+                inB.value = keys.grok || '';
+                dlg.classList.remove('hidden');
+            });
+
+            document.addEventListener('click', (e) => {
+                const dlg = document.getElementById('api-keys-dialog');
+                if (!dlg || dlg.classList.contains('hidden')) return;
+                const isClose = e.target && (e.target.id === 'api-keys-close');
+                const isSave = e.target && (e.target.id === 'api-keys-save');
+                const isClear = e.target && (e.target.id === 'api-keys-clear');
+                if (isClose) {
+                    dlg.classList.add('hidden');
+                } else if (isSave) {
+                    const a = dlg.querySelector('#input-openrouter').value.trim();
+                    const b = dlg.querySelector('#input-grok').value.trim();
+                    setKeys(a, b);
+                    dlg.classList.add('hidden');
+                    updateExpensiveAvailability();
+                    // Re-open menu if user had it open to reflect changes immediately
+                    try {
+                        document.querySelectorAll('.player-selector-button').forEach(btn => {
+                            const ul = btn.parentElement && btn.parentElement.querySelector('.player-selector-list');
+                            if (ul && !ul.classList.contains('hidden')) {
+                                // force refresh styles
+                                ul.classList.add('hidden');
+                                setTimeout(() => { ul.classList.remove('hidden'); }, 0);
+                            }
+                        });
+                    } catch (e2) {}
+                } else if (isClear) {
+                    setKeys('', '');
+                    dlg.querySelector('#input-openrouter').value = '';
+                    dlg.querySelector('#input-grok').value = '';
+                    updateExpensiveAvailability();
+                }
+            });
+
+            // Expose a minimal API to other scripts
+            window.__arenaKeys = {
+                get: getKeys
+            };
+
+            // Initial pass to reflect keys availability
+            setTimeout(updateExpensiveAvailability, 0);
+
+            // Refresh availability each time the model dropdown is opened
+            document.addEventListener('click', (e) => {
+                const btn = e.target && e.target.closest && e.target.closest('.player-selector-button');
+                if (btn) {
+                    setTimeout(updateExpensiveAvailability, 0);
+                }
             });
         });
     </script>

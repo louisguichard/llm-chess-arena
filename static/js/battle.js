@@ -253,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const whiteName = whiteDisplayName || "White";
             const blackName = blackDisplayName || "Black";
 
-            if (termination === 'No response from the model.') {
+            if (termination === 'No response from the model.' || /Authentication failed/i.test(termination)) {
                 winnerText.innerHTML = `<strong class="text-black dark:text-gray-100">Game canceled.</strong> Match canceled due to no response.`;
                 if (winnerReason) winnerReason.textContent = termination;
                 winnerContainer.style.display = 'block';
@@ -378,15 +378,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    white_player: whitePlayer,
-                    black_player: blackPlayer
-                })
+                body: (() => {
+                    const payload = {
+                        white_player: whitePlayer,
+                        black_player: blackPlayer
+                    };
+                    try {
+                        const keys = (window.__arenaKeys && window.__arenaKeys.get) ? window.__arenaKeys.get() : { openrouter: '', grok: '' };
+                        // Only send keys if at least one selected model is expensive
+                        const selectedOptions = Array.from(document.querySelectorAll('.player-panel .llm-option')).filter(li => li.dataset && (li.dataset.llmId === whitePlayer || li.dataset.llmId === blackPlayer));
+                        const isAnyExpensive = selectedOptions.some(li => li.dataset.expensive === 'true');
+                        if (isAnyExpensive) {
+                            if (keys.openrouter) payload.openrouter_api_key = keys.openrouter;
+                            if (keys.grok) payload.grok_api_key = keys.grok;
+                        }
+                    } catch (e) {}
+                    return JSON.stringify(payload);
+                })()
             }, 2, 400);
 
             const data = await response.json();
             if (data.error) {
-                throw new Error(data.error);
+                const msg = (data.error || 'Error');
+                const hint = /auth|401|unauthor|api key/i.test(msg + ' ' + (data.details || '')) ? '\n\nPlease verify your API keys.' : '';
+                alert(msg + hint);
+                throw new Error(msg);
             }
             
             gameId = data.game_id;
@@ -427,7 +443,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (gameData.error) {
                 const msg = gameData.details || gameData.error || 'Unknown error';
                 console.error('Game error:', msg);
-                winnerText.textContent = `Error: ${msg}`;
+                const needsKeysMsg = /auth|401|unauthor|api key/i.test(String(msg)) ? ' Please verify your API keys.' : '';
+                winnerText.textContent = `Error: ${msg}${needsKeysMsg}`;
                 winnerContainer.style.display = 'block';
                 isGameRunning = false;
                 startButton.disabled = false;

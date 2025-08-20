@@ -128,7 +128,16 @@ class ChessGame:
             log.debug(
                 f"Attempt {attempts + 1}/{1 + max_retries} for {player.name()}..."
             )
-            response_data = player.chat(messages)
+            try:
+                response_data = player.chat(messages)
+            except RuntimeError as e:  # authentication error = stop immediately
+                return {
+                    "error": RetryReason.AUTHENTICATION_FAILED,
+                    "rationale": str(e),
+                    "reasoning": "",
+                    "cost": total_cost,
+                    "latency": total_latency,
+                }
 
             # Handle case where chat returns None (empty response, free retry)
             if not response_data:

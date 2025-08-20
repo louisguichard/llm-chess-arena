@@ -40,6 +40,7 @@ class RetryReason(Enum):
     MISSING_BREAKDOWN_KEY = "The model didn't return a valid response."
     MISSING_ANALYSIS_KEY = "The model didn't return a valid response."
     INVALID_UCI_FORMAT = "The model didn't respected the imposed response format."
+    AUTHENTICATION_FAILED = "Authentication failed. Please verify your API keys."
 
 
 def board_to_ascii(board):

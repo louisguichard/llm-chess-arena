@@ -67,9 +67,6 @@ def index():
             }
         )
 
-    # Show deactivated models at the end (stable sort keeps original order otherwise)
-    llms.sort(key=lambda m: m.get("deactivated", False))
-
     # Prepare data for leaderboard page
     leaderboard_data = []
     sorted_players = sorted(
@@ -136,6 +133,8 @@ def start_game():
     data = request.get_json()
     white_model_id = data.get("white_player")
     black_model_id = data.get("black_player")
+    user_openrouter_api_key = (data.get("openrouter_api_key") or "").strip()
+    user_grok_api_key = (data.get("grok_api_key") or "").strip()
 
     if not white_model_id or not black_model_id:
         return jsonify({"error": "Both players must be selected."}), 400
@@ -161,23 +160,21 @@ def start_game():
             }
         ), 400
 
-    if "Expensive" in white_model_data.get("tags", []):
-        return jsonify(
-            {
-                "error": f"{white_model_data.get('name', white_model_id)} is expensive and cannot be used."
-            }
-        ), 400
-
-    if "Expensive" in black_model_data.get("tags", []):
-        return jsonify(
-            {
-                "error": f"{black_model_data.get('name', black_model_id)} is expensive and cannot be used."
-            }
-        ), 400
+    # Build models clients
+    white_client = LLMClient(
+        white_model_id,
+        user_openrouter_api_key=user_openrouter_api_key,
+        user_grok_api_key=user_grok_api_key,
+    )
+    black_client = LLMClient(
+        black_model_id,
+        user_openrouter_api_key=user_openrouter_api_key,
+        user_grok_api_key=user_grok_api_key,
+    )
 
     game = ChessGame(
-        white_player=LLMClient(white_model_id),
-        black_player=LLMClient(black_model_id),
+        white_player=white_client,
+        black_player=black_client,
     )
 
     game_id = str(uuid.uuid4())
