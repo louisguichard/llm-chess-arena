@@ -80,7 +80,7 @@
             {% set row_index = loop.index0 %}
             {% for piece in row %}
                 {% set col_index = loop.index0 %}
-                {% set is_light = (row_index + col_index) % 2 != 0 %}
+                {% set is_light = (row_index + col_index) % 2 == 0 %}
                 <div class="flex items-center justify-center {{ 'bg-white dark:bg-zinc-300' if is_light else 'bg-green-600/80 dark:bg-green-500/60' }}">
                     {% set piece_class = '' %}
                     {% if piece %}
