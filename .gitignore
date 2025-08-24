@@ -2,6 +2,5 @@ __pycache__
 .env
 games/
 ratings.json
-TODOLIST.md
 .DS_Store
 ressources/
