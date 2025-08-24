@@ -70,3 +70,6 @@ python app.py
 
 Then, open your web browser and navigate to `http://1227.0.0.1:5000`. You'll be able to select two models and start a battle.
 
+## License
+
+This project is licensed under the MIT License.
