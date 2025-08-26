@@ -5,7 +5,7 @@
 - [ ] Compute metrics about end of game reasons
 - [ ] Compute metrics about accuracy and estimated human ELO
 - [ ] Add an explanatory page (e.g., “About” or “How it works”) to detail the process, how and with what parameters the models are called, why it is not easy to impose a time limit, what difference it makes to have a thinking version or not, etc.
-- [ ] Fix unintended draws in end game + fix prompts to give more informations (full-move history?)
+- [x] Fix unintended draws in end game + fix prompts to give more informations (full-move history?)
 - [ ] Make low costs models play against Stockfish references to estimate models human calibrated ELO 
 - [ ] Add a Play page where human users can play against an AI
 - [ ] Remove the game global variable in app (limits to only 1 Cloud Run instance and can break games on instance restart)

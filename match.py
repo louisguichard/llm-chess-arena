@@ -19,7 +19,7 @@ from logger import log
 class ChessGame:
     """Single chess game between two players."""
 
-    def __init__(self, white_player, black_player, max_moves=200, pgn_dir="games"):
+    def __init__(self, white_player, black_player, max_moves=500, pgn_dir="games"):
         """Initialize a new chess game."""
         self.white_player = white_player
         self.black_player = black_player
@@ -226,21 +226,27 @@ class ChessGame:
 
     def determine_game_result(self):
         """Determine the final result if the game ended naturally."""
-        if self.board.is_game_over(claim_draw=False):
-            result = self.board.result(claim_draw=False)
+        if self.board.is_game_over(claim_draw=True):
+            result = self.board.result(claim_draw=True)
             self.game.headers["Result"] = result
             if self.board.is_checkmate():
                 self.game.headers["Termination"] = "checkmate"
             elif self.board.is_stalemate():
                 self.game.headers["Termination"] = "stalemate"
+            elif self.board.is_insufficient_material():
+                self.game.headers["Termination"] = "insufficient material"
+            elif self.board.can_claim_threefold_repetition():
+                self.game.headers["Termination"] = "threefold repetition"
+            elif self.board.can_claim_fifty_moves():
+                self.game.headers["Termination"] = "fifty-move rule"
             else:
                 self.game.headers["Termination"] = "draw"
-            # Log extra context to help diagnose unexpected terminations
-            log.info(
-                f"Game ended. result={self.game.headers['Result']}, termination={self.game.headers['Termination']}, "
-                f"fullmove={self.board.fullmove_number}, halfmove={self.board.halfmove_clock}, "
-                f"fen={self.board.fen()}"
-            )
+                # Log extra context to help diagnose unexpected draws
+                log.info(
+                    f"Game ended. result={self.game.headers['Result']}, termination={self.game.headers['Termination']}, "
+                    f"fullmove={self.board.fullmove_number}, halfmove={self.board.halfmove_clock}, "
+                    f"fen={self.board.fen()}"
+                )
         else:
             # Game ended due to move limit
             self.game.headers["Result"] = "1/2-1/2"
@@ -309,7 +315,7 @@ class ChessGame:
         """
         if (
             self.is_over
-            or self.board.is_game_over(claim_draw=False)
+            or self.board.is_game_over(claim_draw=True)
             or self.board.fullmove_number > self.max_moves
         ):
             self.is_over = True
@@ -421,7 +427,7 @@ class ChessGame:
         self.node = self.node.add_variation(move)
 
         # Check for game over condition after the move
-        if self.board.is_game_over(claim_draw=False):
+        if self.board.is_game_over(claim_draw=True):
             self.is_over = True
             self.determine_game_result()
             self.save_game()

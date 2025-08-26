@@ -91,6 +91,19 @@ def last_uci_from_board(board):
         return "-"
 
 
+def recent_moves_uci(board, limit=18):
+    """Return a compact string of the last N moves in UCI."""
+    try:
+        ucis = [mv.uci() for mv in board.move_stack]
+        if not ucis:
+            return "(none)"
+        if len(ucis) > limit:
+            ucis = ucis[-limit:]
+        return " ".join(ucis)
+    except Exception:
+        return "-"
+
+
 SYSTEM_PROMPT = """You are a professional chess player. Your goal is to win the game by making the best possible moves.
 
 Follow these steps to decide on your move:
@@ -104,6 +117,7 @@ Follow these steps to decide on your move:
     - Pawns: forward moves require empty squares (including the intermediate square on a two-step from the starting rank); diagonal pawn moves must capture an opponent piece; en passant only if allowed by the last move; promotions must include a piece letter (prefer 'q' unless clearly worse).
     - Knights can jump; kings move one square; castling requires the path is clear, the king is not in check, and none of the squares the king passes through are attacked.
     - Confirm the exact UCI string and that the final move is legal. If a tempting idea fails these checks, switch to a legal alternative.
+5.  Draw awareness (classical rules): Avoid repeating the same position three times (threefold repetition) and avoid reaching fifty moves without a pawn move or capture if you are better. If defending a worse position, you may aim for these draws.
 
 Output format:
 - Return your decision as ONE JSON object with keys in this exact order: `analysis`, `breakdown`, `choice`.
@@ -126,6 +140,7 @@ def build_user_prompt(board):
     color_str = "White" if board.turn == chess.WHITE else "Black"
     last_uci = last_uci_from_board(board)
     ascii_board_str = board_to_ascii(board)
+    recent_uci = recent_moves_uci(board, 18)
 
     def piece_lists(board):
         pieces_positions = {}
@@ -162,6 +177,7 @@ def build_user_prompt(board):
     return (
         f"You play {color_str} and it's your turn.\n"
         f"Opponent just played {last_uci}.\n"
+        f"Recent moves (last 18): {recent_uci}\n"
         f"White pieces: {white_pieces_str}\n"
         f"Black pieces: {black_pieces_str}\n"
         f"ASCII board (ranks 8→1, files a→h):\n{ascii_board_str}\n\n"
