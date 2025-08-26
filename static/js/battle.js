@@ -135,6 +135,62 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 250);
     }
 
+    // --- Move navigation state ---
+    let fenHistory = [];
+    let currentFenIndex = -1;
+
+    function getStartFEN() {
+        return 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+    }
+
+    function setDisplayedFen(fen) {
+        try { updateBoard(fen); } catch (e) {}
+        try { scheduleEvaluation(fen); } catch (e) {}
+        try { highlightFromFEN(fen); } catch (e) {}
+    }
+
+    function updateNavUI() {
+        const prevBtn = document.getElementById('nav-prev');
+        const nextBtn = document.getElementById('nav-next');
+        const prevBtnMobile = document.getElementById('nav-prev-mobile');
+        const nextBtnMobile = document.getElementById('nav-next-mobile');
+        const canGoPrev = currentFenIndex > 0;
+        const canGoNext = currentFenIndex >= 0 && currentFenIndex < fenHistory.length - 1;
+        if (prevBtn) prevBtn.disabled = !canGoPrev;
+        if (nextBtn) nextBtn.disabled = !canGoNext;
+        if (prevBtnMobile) prevBtnMobile.disabled = !canGoPrev;
+        if (nextBtnMobile) nextBtnMobile.disabled = !canGoNext;
+    }
+
+    function setDisplayedFenByIndex(idx) {
+        if (!fenHistory.length) return;
+        const clamped = Math.max(0, Math.min(fenHistory.length - 1, idx));
+        currentFenIndex = clamped;
+        setDisplayedFen(fenHistory[currentFenIndex]);
+        updateNavUI();
+    }
+
+    function ensureFenHistoryFromState(state) {
+        try {
+            if (fenHistory.length > 0) return;
+            const moves = Array.isArray(state && state.moves) ? state.moves : [];
+            const list = [];
+            if (moves.length > 0) {
+                for (let i = 0; i < moves.length; i++) {
+                    const fenb = (moves[i] && moves[i].fen_before) ? String(moves[i].fen_before) : '';
+                    if (fenb && (list.length === 0 || list[list.length - 1] !== fenb)) list.push(fenb);
+                }
+            }
+            const current = String(state && state.fen ? state.fen : '');
+            if (current && (list.length === 0 || list[list.length - 1] !== current)) list.push(current);
+            if (list.length === 0) list.push(getStartFEN());
+            fenHistory = list.slice();
+            currentFenIndex = fenHistory.length - 1;
+            setDisplayedFen(fenHistory[currentFenIndex]);
+            updateNavUI();
+        } catch (e) {}
+    }
+
     function cpToWhitePercent(cp) {
         const capped = Math.max(-EVAL_MAX_CP, Math.min(EVAL_MAX_CP, cp));
         return 50 + (capped / (2 * EVAL_MAX_CP)) * 100;
@@ -197,6 +253,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			// Reset board to initial position
 			updateBoard('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+			try { scheduleEvaluation('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'); } catch (e) {}
+			try { highlightFromFEN('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'); } catch (e) {}
+			fenHistory = ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'];
+			currentFenIndex = 0;
+			updateNavUI();
 		}
 
     async function fetchWithRetry(url, options, retries = 3, delay = 500) {
@@ -227,9 +288,25 @@ document.addEventListener('DOMContentLoaded', () => {
     function applyServerState(state) {
         if (!state) return;
         try {
-            updateBoard(state.fen);
-            scheduleEvaluation(state.fen);
-            highlightFromFEN(state.fen);
+            ensureFenHistoryFromState(state);
+            const newFen = String(state.fen || '');
+            if (newFen) {
+                const lastFen = fenHistory.length ? fenHistory[fenHistory.length - 1] : '';
+                const wasAtEnd = (currentFenIndex === fenHistory.length - 1) || currentFenIndex === -1;
+                if (!fenHistory.length) {
+                    fenHistory.push(newFen);
+                    currentFenIndex = 0;
+                } else if (lastFen !== newFen) {
+                    fenHistory.push(newFen);
+                }
+                if (wasAtEnd) {
+                    currentFenIndex = fenHistory.length - 1;
+                    setDisplayedFen(newFen);
+                    updateNavUI();
+                } else {
+                    updateNavUI();
+                }
+            }
         } catch (e) {}
 
         whiteTime = state.white_time || 0;
@@ -678,6 +755,55 @@ document.addEventListener('DOMContentLoaded', () => {
     setupPlayerPanels();
     initStockfish();
     
+    function setupNavigationControls() {
+        const prevBtn = document.getElementById('nav-prev');
+        const nextBtn = document.getElementById('nav-next');
+        const prevBtnMobile = document.getElementById('nav-prev-mobile');
+        const nextBtnMobile = document.getElementById('nav-next-mobile');
+        
+        function goPrev() {
+            if (currentFenIndex > 0) setDisplayedFenByIndex(currentFenIndex - 1);
+        }
+        function goNext() {
+            if (currentFenIndex < fenHistory.length - 1) setDisplayedFenByIndex(currentFenIndex + 1);
+        }
+        
+        if (prevBtn) prevBtn.addEventListener('click', goPrev);
+        if (nextBtn) nextBtn.addEventListener('click', goNext);
+        if (prevBtnMobile) prevBtnMobile.addEventListener('click', goPrev);
+        if (nextBtnMobile) nextBtnMobile.addEventListener('click', goNext);
+
+        document.addEventListener('keydown', function(e) {
+            const key = e.key || '';
+            if (key === 'ArrowLeft') {
+                if (currentFenIndex > 0) {
+                    e.preventDefault();
+                    setDisplayedFenByIndex(currentFenIndex - 1);
+                }
+            } else if (key === 'ArrowRight') {
+                if (currentFenIndex < fenHistory.length - 1) {
+                    e.preventDefault();
+                    setDisplayedFenByIndex(currentFenIndex + 1);
+                }
+            } else if (key === 'ArrowUp') {
+                if (fenHistory.length) {
+                    e.preventDefault();
+                    setDisplayedFenByIndex(0);
+                }
+            } else if (key === 'ArrowDown') {
+                if (fenHistory.length) {
+                    e.preventDefault();
+                    setDisplayedFenByIndex(fenHistory.length - 1);
+                }
+            }
+        });
+        if (!fenHistory.length) {
+            fenHistory = [getStartFEN()];
+            currentFenIndex = 0;
+        }
+        updateNavUI();
+    }
+
     // Height sync utilities (xl screens only)
     function applyPanelHeights() {
         try {
@@ -736,4 +862,5 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     setupHeightSync();
+    setupNavigationControls();
 });
