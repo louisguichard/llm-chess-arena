@@ -142,13 +142,17 @@ class LLMClient:
                     log.warning(
                         f"No provider supports response_format for {model_to_call}. Proceeding without choosing a provider."
                     )
+            if self.model == "deepseek/deepseek-chat-v3.1":
+                response_format = {"type": "json_object"}
+            else:
+                response_format = {"type": "json_schema", "json_schema": JSON_SCHEMA}
             log.info(f"Sending request to {model_to_call}")
             log.debug(f"Detailed prompt sent to {model_to_call}: {messages}")
             start = time.time()
             with self.client.chat.completions.create(
                 model=model_to_call,
                 messages=messages,
-                response_format={"type": "json_schema", "json_schema": JSON_SCHEMA},
+                response_format=response_format,
                 extra_body=extra_body,
                 stream=True,
             ) as stream:

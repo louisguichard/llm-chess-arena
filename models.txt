@@ -9,7 +9,7 @@ openai/gpt-5-nano, GPT-5 Nano
 openai/o3, o3, [Expensive]
 openai/gpt-4o, GPT-4o, [Fast]
 openai/gpt-oss-120b, GPT-OSS 120B, [Open-source, Fast]
-openai/gpt-oss-20b, GPT-OSS 20B, [Open-source]
+openai/gpt-oss-20b, GPT-OSS 20B, [Open-source, Fast]
 
 # Google
 google/gemma-3-27b-it, Gemma 3 27B, [Open-source]
@@ -34,6 +34,7 @@ mistralai/mistral-medium-3.1, Mistral Medium 3.1
 # DeepSeek
 deepseek/deepseek-r1:free, DeepSeek R1, [Open-source]
 deepseek/deepseek-chat-v3-0324:free, DeepSeek V3, [Open-source]
+deepseek/deepseek-chat-v3.1, DeepSeek V3.1, [Open-source]
 
 # Others
 qwen/qwen3-30b-a3b, Qwen3 30B, [Open-source]
