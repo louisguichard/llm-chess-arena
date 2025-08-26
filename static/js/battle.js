@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const winnerReason = document.getElementById('winner-reason');
     let gameId = null;
     let isGameRunning = false;
+    let spectatorMode = false;
 
     let whiteTime = 0;
     let blackTime = 0;
@@ -172,7 +173,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function ensureFenHistoryFromState(state) {
         try {
-            if (fenHistory.length > 0) return;
+            // If we only have the initial FEN, rebuild from server-provided moves so early moves are accessible
+            if (fenHistory.length > 1) return;
             const moves = Array.isArray(state && state.moves) ? state.moves : [];
             const list = [];
             if (moves.length > 0) {
@@ -313,6 +315,47 @@ document.addEventListener('DOMContentLoaded', () => {
         blackTime = state.black_time || 0;
         whiteCost = state.white_cost || 0;
         blackCost = state.black_cost || 0;
+        // Populate player display names, provider logo, and ELO for spectator links
+        try {
+            function fillPanelFromModelId(panelColor, modelId) {
+                if (!modelId) return;
+                const panel = document.getElementById(panelColor + '-panel');
+                if (!panel) return;
+                const option = document.querySelector('.llm-option[data-llm-id="' + modelId + '"]');
+                const nameEl = panel.querySelector('.player-name');
+                const infoEl = panel.querySelector('.player-info');
+                const avatarEl = panel.querySelector('.player-avatar');
+                const inputEl = panel.querySelector('.player-input');
+                if (inputEl) inputEl.value = modelId;
+                if (option) {
+                    const disp = option.dataset.llmName || (modelId.split('/').slice(-1)[0]);
+                    const provider = option.dataset.llmProvider || (modelId.split('/')[0] || '');
+                    const elo = option.dataset.llmElo ? parseInt(option.dataset.llmElo, 10) : '';
+                    if (nameEl) nameEl.textContent = disp;
+                    if (infoEl) infoEl.textContent = provider + (elo !== '' ? ' | ' + elo + ' ELO' : '');
+                    if (panelColor === 'white') whiteDisplayName = disp; else blackDisplayName = disp;
+                    if (avatarEl) {
+                        const svgEl = option.querySelector('svg');
+                        if (svgEl) {
+                            avatarEl.innerHTML = svgEl.outerHTML;
+                        } else {
+                            const iconWrapper = option.querySelector('.w-6.h-6');
+                            avatarEl.innerHTML = iconWrapper ? iconWrapper.innerHTML : '';
+                        }
+                        avatarEl.classList.remove('bg-gray-200', 'dark:bg-zinc-800', 'border-2', 'border-dashed', 'border-gray-300', 'dark:border-zinc-700');
+                    }
+                } else {
+                    // Fallback to raw id parsing
+                    const disp = modelId.split('/').slice(-1)[0];
+                    const provider = modelId.split('/')[0] || '';
+                    if (nameEl) nameEl.textContent = disp;
+                    if (infoEl) infoEl.textContent = provider;
+                    if (panelColor === 'white') whiteDisplayName = disp; else blackDisplayName = disp;
+                }
+            }
+            fillPanelFromModelId('white', state.white_model_id);
+            fillPanelFromModelId('black', state.black_model_id);
+        } catch (e) {}
         const wt = document.getElementById('white-time');
         const bt = document.getElementById('black-time');
         const wc = document.getElementById('white-cost');
@@ -483,6 +526,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             gameId = data.game_id;
+            const shareUrl = updateUrlWithGame(gameId);
+            setButtonToShareMode(shareUrl);
             highlightCurrentPlayer();
             openEventStream();
             playNextMove();
@@ -559,7 +604,7 @@ document.addEventListener('DOMContentLoaded', () => {
             eventSource.onerror = () => {
                 try { eventSource.close(); } catch (e) {}
                 eventSource = null;
-                if (isGameRunning) setTimeout(openEventStream, 1000);
+                if (isGameRunning || spectatorMode) setTimeout(openEventStream, 1000);
             };
         } catch (e) {
             // Fallback to polling-only
@@ -577,6 +622,94 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) {
             // Ignore; we'll retry on the next loop
         }
+    }
+
+    function setButtonToShareMode(url) {
+        const btns = [startButton, startButtonMobile].filter(Boolean);
+        btns.forEach(btn => {
+            if (!btn) return;
+            btn.dataset.mode = 'share';
+            try { btn.disabled = false; } catch (e) {}
+            try { btn.type = 'button'; } catch (e) {}
+            try {
+                btn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                btn.classList.add('bg-gray-500', 'hover:bg-gray-600');
+            } catch (e) {}
+            const label = btn.querySelector('.btn-label');
+            if (label) label.textContent = 'Share';
+            // Always bind on the button element for full-area clicks
+            btn.onclick = function(ev) {
+                ev.preventDefault();
+                try {
+                    navigator.clipboard.writeText(url).then(() => {
+                        showCopyToast();
+                    }).catch(() => {
+                        showCopyToast();
+                    });
+                } catch (e) {
+                    showCopyToast();
+                }
+            };
+            // Ensure inner elements do not steal clicks after first click
+            try {
+                const inner = btn.querySelectorAll('*');
+                inner.forEach(el => { el.style.pointerEvents = 'none'; });
+            } catch (e) {}
+        });
+    }
+
+    function showCopyToast() {
+        let el = document.getElementById('copy-toast');
+        if (!el) {
+            el = document.createElement('div');
+            el.id = 'copy-toast';
+            el.style.position = 'fixed';
+            el.style.bottom = '20px';
+            el.style.left = '50%';
+            el.style.transform = 'translateX(-50%)';
+            el.style.background = 'rgba(17, 24, 39, 0.95)';
+            el.style.color = '#e5e7eb';
+            el.style.padding = '8px 12px';
+            el.style.borderRadius = '10px';
+            el.style.fontWeight = '600';
+            el.style.fontSize = '13px';
+            el.style.boxShadow = '0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.08)';
+            el.style.backdropFilter = 'blur(6px)';
+            el.style.border = '1px solid rgba(255, 255, 255, 0.08)';
+            el.style.zIndex = '9999';
+            el.style.transition = 'all 0.25s ease-in-out';
+            el.style.maxWidth = '260px';
+            el.style.textAlign = 'center';
+            el.style.pointerEvents = 'none';
+            el.innerHTML = `
+                <div style="display:flex;align-items:center;gap:8px;justify-content:center;">
+                    <svg style="width:16px;height:16px;flex-shrink:0;" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                    </svg>
+                    <span>Link copied!</span>
+                </div>
+            `;
+            document.body.appendChild(el);
+        }
+        el.style.opacity = '1';
+        el.style.transform = 'translateX(-50%) translateY(0px)';
+        setTimeout(() => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateX(-50%) translateY(8px)';
+        }, 1400);
+    }
+
+    function readQueryParam(name) {
+        const params = new URLSearchParams(window.location.search);
+        return params.get(name);
+    }
+
+    function updateUrlWithGame(game) {
+        if (!game) return;
+        const url = new URL(window.location.href);
+        url.searchParams.set('game', game);
+        window.history.replaceState({}, '', url.toString());
+        return url.toString();
     }
 
     function highlightCurrentPlayer() {
@@ -798,8 +931,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         if (!fenHistory.length) {
-            fenHistory = [getStartFEN()];
-            currentFenIndex = 0;
+            // Do not insert a default if server will provide history soon; keep empty to allow rebuild
+            // fenHistory = [getStartFEN()];
+            // currentFenIndex = 0;
         }
         updateNavUI();
     }
@@ -863,4 +997,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setupHeightSync();
     setupNavigationControls();
+
+    // Spectator mode via ?game=
+    (function initSpectatorFromQuery() {
+        const q = readQueryParam('game');
+        if (!q) return;
+        gameId = q;
+        spectatorMode = true;
+        const shareUrl = updateUrlWithGame(gameId);
+        // Use the same Share button and toast styles as original page
+        setButtonToShareMode(shareUrl);
+        resyncState();
+        openEventStream();
+    })();
 });

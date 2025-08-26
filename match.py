@@ -25,6 +25,7 @@ class ChessGame:
         self.black_player = black_player
         self.max_moves = max_moves
         self.pgn_dir = pgn_dir
+        self.game_id = None
 
         # Initialize game state
         self.board = chess.Board()
@@ -280,10 +281,20 @@ class ChessGame:
                 "black_cost": self.black_cost,
                 "total_moves": len(self.board.move_stack),
             },
+            "fen": self.board.fen(),
+            "is_over": True,
         }
         json_filename = f"{base_filename}.json"
         json_blob_name = f"{self.pgn_dir}/{json_filename}"
         write_json_to_gcs(json_blob_name, game_data)
+
+        # Save a stable copy under games/<game_id>.json for sharing
+        try:
+            if self.game_id:
+                stable_blob = f"games/{self.game_id}.json"
+                write_json_to_gcs(stable_blob, game_data)
+        except Exception as e:
+            log.error(f"Error saving game {self.game_id}: {e}")
 
     def get_current_player(self):
         """Return the player whose turn it is."""

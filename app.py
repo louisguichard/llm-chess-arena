@@ -13,6 +13,7 @@ from flask import stream_with_context
 from utils import read_models_from_file
 from ratings import RatingsTable
 from match import ChessGame
+from gcp import read_json_from_gcs
 from client import LLMClient
 import traceback
 from logger import log
@@ -177,7 +178,28 @@ def start_game():
         black_player=black_client,
     )
 
-    game_id = str(uuid.uuid4())
+    # Human-friendly game id from display names and 8-char suffix
+    def slugify(s):
+        s = (s or "").strip().lower()
+        out = []
+        for ch in s:
+            if ch.isalnum():
+                out.append(ch)
+            elif ch in (" ", "-", "_"):
+                out.append("-")
+        slug = "".join(out)
+        while "--" in slug:
+            slug = slug.replace("--", "-")
+        slug = slug.strip("-")
+        return slug or "model"
+
+    white_display = white_model_data.get("name") or white_model_id.split("/")[-1]
+    black_display = black_model_data.get("name") or black_model_id.split("/")[-1]
+    ws = slugify(white_display)
+    bs = slugify(black_display)
+    short = uuid.uuid4().hex[:8]
+    game_id = f"{ws}-vs-{bs}-{short}"
+    game.game_id = game_id
     # On stocke aussi une condition et un compteur "version" pour réveiller les clients SSE
     games[game_id] = {
         "game": game,
@@ -273,6 +295,29 @@ def play_move(game_id):
 def get_game_state(game_id):
     entry = games.get(game_id)
     if not entry:
+        # Try loading finished game from storage
+        data = read_json_from_gcs(f"games/{game_id}.json")
+        if data:
+            state = {
+                "game_id": game_id,
+                "is_over": True,
+                "fen": data.get("fen"),
+                "result": data.get("result"),
+                "termination": data.get("termination"),
+                "white_time": (data.get("stats") or {}).get("white_time", 0),
+                "black_time": (data.get("stats") or {}).get("black_time", 0),
+                "white_cost": (data.get("stats") or {}).get("white_cost", 0),
+                "black_cost": (data.get("stats") or {}).get("black_cost", 0),
+                "moves": data.get("moves") or [],
+                "white_model_id": data.get("white_player"),
+                "black_model_id": data.get("black_player"),
+            }
+            response = jsonify(state)
+            response.headers["Cache-Control"] = (
+                "no-store, no-cache, must-revalidate, max-age=0"
+            )
+            response.headers["Pragma"] = "no-cache"
+            return response
         log.warning(f"Game state requested for missing game_id={game_id}")
         return jsonify({"error": "Game not found."}), 404
     game = entry["game"]
@@ -287,6 +332,8 @@ def get_game_state(game_id):
         "white_cost": game.white_cost,
         "black_cost": game.black_cost,
         "moves": game.moves_log,
+        "white_model_id": game.white_player.name(),
+        "black_model_id": game.black_player.name(),
     }
     response = jsonify(state)
     # Prevent caches from serving stale game state
@@ -299,6 +346,38 @@ def get_game_state(game_id):
 def stream_game_state(game_id):
     entry = games.get(game_id)
     if not entry:
+        # If finished game exists in storage, stream a single state then keepalive pings
+        data = read_json_from_gcs(f"games/{game_id}.json")
+        if data:
+
+            def sse(event, data):
+                return f"event: {event}\ndata: {json.dumps(data)}\n\n"
+
+            @stream_with_context
+            def event_stream_finished():
+                state = {
+                    "game_id": game_id,
+                    "is_over": True,
+                    "fen": data.get("fen"),
+                    "result": data.get("result"),
+                    "termination": data.get("termination"),
+                    "white_time": (data.get("stats") or {}).get("white_time", 0),
+                    "black_time": (data.get("stats") or {}).get("black_time", 0),
+                    "white_cost": (data.get("stats") or {}).get("white_cost", 0),
+                    "black_cost": (data.get("stats") or {}).get("black_cost", 0),
+                    "moves": data.get("moves") or [],
+                    "white_model_id": data.get("white_player"),
+                    "black_model_id": data.get("black_player"),
+                }
+                yield sse("state", state)
+                while True:
+                    yield sse("ping", {})
+
+            response = Response(event_stream_finished(), mimetype="text/event-stream")
+            response.headers["Cache-Control"] = "no-store"
+            response.headers["X-Accel-Buffering"] = "no"
+            response.headers["Connection"] = "keep-alive"
+            return response
         return jsonify({"error": "Game not found."}), 404
     cond = entry["cond"]
 
@@ -315,6 +394,8 @@ def stream_game_state(game_id):
             "white_cost": game.white_cost,
             "black_cost": game.black_cost,
             "moves": game.moves_log,
+            "white_model_id": game.white_player.name(),
+            "black_model_id": game.black_player.name(),
         }
 
     def sse(event, data):

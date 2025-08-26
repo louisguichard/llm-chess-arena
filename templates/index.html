@@ -39,10 +39,16 @@
 
         function navigateTo(page, replace) {
             const path = routePathFor(page);
+            const url = new URL(window.location.href);
+            const gameParam = url.searchParams.get('game');
+            let newPath = path;
+            if (gameParam && page === 'battle') {
+                newPath += '?game=' + encodeURIComponent(gameParam);
+            }
             if (replace) {
-                history.replaceState({ page: page }, '', path);
+                history.replaceState({ page: page }, '', newPath);
             } else {
-                history.pushState({ page: page }, '', path);
+                history.pushState({ page: page }, '', newPath);
             }
             showPage(page);
         }
