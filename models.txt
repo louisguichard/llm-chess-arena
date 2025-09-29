@@ -20,6 +20,7 @@ google/gemini-2.5-flash-lite, Gemini 2.5 Flash Lite, [Fast]
 # Anthropic
 anthropic/claude-opus-4.1, Claude Opus 4.1, [Expensive]
 anthropic/claude-sonnet-4, Claude Sonnet 4, [Expensive, Fast]
+anthropic/claude-sonnet-4.5, Claude Sonnet 4.5, [Expensive]
 
 # xAI
 x-ai/grok-4, Grok 4, [Expensive]
