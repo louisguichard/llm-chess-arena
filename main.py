@@ -4,10 +4,10 @@ import argparse
 import random
 from dotenv import load_dotenv
 
-from match import ChessGame
-from client import OpenRouterClient
-from ratings import RatingsTable
-from utils import read_models_from_file
+from src.match import ChessGame
+from src.client import OpenRouterClient
+from src.ratings import RatingsTable
+from src.utils import read_models_from_file
 
 
 MODELS_FILE = "models.txt"

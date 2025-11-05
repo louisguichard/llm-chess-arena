@@ -1,6 +1,4 @@
 import threading
-
-
 from flask import (
     Flask,
     render_template,
@@ -10,17 +8,17 @@ from flask import (
     send_file,
 )
 from flask import stream_with_context
-from utils import read_models_from_file
-from ratings import RatingsTable
-from match import ChessGame
-from gcp import read_json_from_gcs
-from client import LLMClient
-import traceback
-from logger import log
 import json
 import uuid
 import chess
-from prompts import SYSTEM_PROMPT, build_user_prompt
+import traceback
+from src.utils import read_models_from_file
+from src.ratings import RatingsTable
+from src.match import ChessGame
+from src.gcp import read_json_from_gcs
+from src.client import LLMClient
+from src.logger import log
+from src.prompts import SYSTEM_PROMPT, build_user_prompt
 
 app = Flask(__name__)
 

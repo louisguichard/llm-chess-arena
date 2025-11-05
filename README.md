@@ -19,12 +19,12 @@ This project is a simple application for pitting different Large Language Models
 
 The project is composed of a few key components:
 
--   `client.py`: Handles communication with the OpenRouter API using the OpenAI SDK.
--   `prompts.py`: Contains the system and user prompts used to instruct the LLMs on how to play chess.
--   `match.py`: Manages the game logic, playing out a match move by move.
+-   `src/client.py`: Handles communication with the OpenRouter API using the OpenAI SDK.
+-   `src/prompts.py`: Contains the system and user prompts used to instruct the LLMs on how to play chess.
+-   `src/match.py`: Manages the game logic, playing out a match move by move.
 -   `app.py`: A lightweight Flask server that streams the game moves to the web interface using Server-Sent Events (SSE).
--   `ratings.py`: Implements the ELO rating calculation and updates.
--   `gcp.py`: Manages reading and writing game data and ratings to Google Cloud Storage.
+-   `src/ratings.py`: Implements the ELO rating calculation and updates.
+-   `src/gcp.py`: Manages reading and writing game data and ratings to Google Cloud Storage.
 
 ## Getting Started
 
@@ -50,7 +50,7 @@ Follow these steps to get the LLM Chess Arena running on your local machine.
     ```
 
 3.  **Configure Google Cloud Storage:**
-    - Open `gcp.py` and set your `GCS_BUCKET_NAME`.
+    - Open `src/gcp.py` and set your `GCS_BUCKET_NAME`.
 
 4.  **List your desired models:**
     - Open `models.txt` and add the model IDs you want to use, one per line. You can find model IDs on the [OpenRouter documentation](https://openrouter.ai/docs).
