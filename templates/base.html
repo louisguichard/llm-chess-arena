@@ -102,6 +102,7 @@
             <nav class="hidden md:flex items-center gap-1 justify-self-center rounded-full bg-white/80 dark:bg-zinc-800/80 border border-gray-200/70 dark:border-zinc-700/60 px-1.5 py-1 shadow-sm">
               <button data-page="battle" class="nav-link px-4 py-2 rounded-full text-sm font-medium transition-colors text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 hover:text-green-700 dark:hover:text-green-300">Battle</button>
               <button data-page="leaderboard" class="nav-link px-4 py-2 rounded-full text-sm font-medium transition-colors text-gray-600 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/30 hover:text-green-700 dark:hover:text-green-300">Leaderboard</button>
+              <button data-page="about" class="nav-link px-4 py-2 rounded-full text-sm font-medium transition-colors text-gray-600 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/30 hover:text-green-700 dark:hover:text-green-300">About</button>
             </nav>
 
             <div class="flex items-center gap-2 justify-self-end">
@@ -132,6 +133,7 @@
       <div class="flex justify-around">
          <button data-page="battle" class="mobile-nav-link flex flex-col items-center gap-1 p-2 rounded-lg w-full text-indigo-500"> <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg> <span class="text-xs font-medium">Battle</span> </button>
          <button data-page="leaderboard" class="mobile-nav-link flex flex-col items-center gap-1 p-2 rounded-lg w-full text-gray-500 dark:text-gray-400"> <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg> <span class="text-xs font-medium">Leaderboard</span> </button>
+         <button data-page="about" class="mobile-nav-link flex flex-col items-center gap-1 p-2 rounded-lg w-full text-gray-500 dark:text-gray-400"> <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 1 1 5.82 1c0 2-3 2-3 4"></path><line x1="12" y1="17" x2="12" y2="17"></line></svg> <span class="text-xs font-medium">About</span> </button>
       </div>
     </nav>
     {% block scripts %}
@@ -197,7 +199,6 @@
                         <ul class="list-disc pl-5 mt-1 space-y-1 text-xs text-gray-500">
                           <li>Basic models never use your API keys — only expensive models do.</li>
                           <li>Your API keys are stored locally in your browser and are sent to the server only when running an expensive model. They never persist server-side.</li>
-                          <li>GPT-5 can only be used via OpenRouter if you have previously connected your OpenAI account in your OpenRouter settings (Settings → Providers).</li>
                         </ul>
                       </div>
                     </div>

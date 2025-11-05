@@ -3,40 +3,37 @@
 {% block head %}
     <script>
         function showPage(page) {
-            const isBattle = page === 'battle';
             const battleEl = document.getElementById('battle-page');
             const leaderboardEl = document.getElementById('leaderboard-page');
-            if (battleEl && leaderboardEl) {
-                battleEl.style.display = isBattle ? 'block' : 'none';
-                leaderboardEl.style.display = isBattle ? 'none' : 'block';
-            }
+            const aboutEl = document.getElementById('about-page');
+            if (battleEl) battleEl.style.display = page === 'battle' ? 'block' : 'none';
+            if (leaderboardEl) leaderboardEl.style.display = page === 'leaderboard' ? 'block' : 'none';
+            if (aboutEl) aboutEl.style.display = page === 'about' ? 'block' : 'none';
 
             // Update desktop nav active state
-            const battleNav = document.querySelector('.nav-link[data-page="battle"]');
-            const leaderboardNav = document.querySelector('.nav-link[data-page="leaderboard"]');
-            if (battleNav && leaderboardNav) {
-                battleNav.classList.toggle('text-green-600', isBattle);
-                leaderboardNav.classList.toggle('text-green-600', !isBattle);
-            }
+            document.querySelectorAll('.nav-link').forEach(btn => {
+                const active = btn.dataset.page === page;
+                btn.classList.toggle('text-green-600', active);
+                btn.classList.toggle('dark:text-green-400', active);
+                btn.classList.toggle('text-gray-600', !active);
+                btn.classList.toggle('dark:text-gray-300', !active);
+            });
 
             // Update mobile nav active state
-            const battleMobile = document.querySelector('.mobile-nav-link[data-page="battle"]');
-            const leaderboardMobile = document.querySelector('.mobile-nav-link[data-page="leaderboard"]');
-            if (battleMobile && leaderboardMobile) {
-                battleMobile.classList.toggle('text-indigo-500', isBattle);
-                battleMobile.classList.toggle('text-gray-500', !isBattle);
-                battleMobile.classList.toggle('dark:text-gray-400', !isBattle);
-
-                leaderboardMobile.classList.toggle('text-indigo-500', !isBattle);
-                leaderboardMobile.classList.toggle('text-gray-500', isBattle);
-                leaderboardMobile.classList.toggle('dark:text-gray-400', isBattle);
-            }
+            document.querySelectorAll('.mobile-nav-link').forEach(btn => {
+                const active = btn.dataset.page === page;
+                btn.classList.toggle('text-indigo-500', active);
+                btn.classList.toggle('text-gray-500', !active);
+                btn.classList.toggle('dark:text-gray-400', !active);
+            });
         }
 
         function routePathFor(page) {
-            return page === 'leaderboard' ? '/leaderboard' : '/battle';
+            if (page === 'leaderboard') return '/leaderboard';
+            if (page === 'about') return '/about';
+            return '/battle';
         }
-
+    
         function navigateTo(page, replace) {
             const path = routePathFor(page);
             const url = new URL(window.location.href);
@@ -62,6 +59,9 @@
 <div id="leaderboard-page" style="display: none;">
     {% include 'leaderboard.html' %}
 </div>
+<div id="about-page" style="display: none;">
+    {% include 'about.html' %}
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -69,7 +69,9 @@
 <script src="{{ url_for('static', filename='js/battle.js') }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const initialPage = window.location.pathname.indexOf('/leaderboard') !== -1 ? 'leaderboard' : 'battle';
+        let initialPage = 'battle';
+        if (window.location.pathname.indexOf('/leaderboard') !== -1) initialPage = 'leaderboard';
+        if (window.location.pathname.indexOf('/about') !== -1) initialPage = 'about';
         navigateTo(initialPage, true);
 
         document.querySelectorAll('.nav-link, .mobile-nav-link').forEach(link => {
@@ -81,7 +83,12 @@
         });
 
         window.addEventListener('popstate', (e) => {
-            const page = (e.state && e.state.page) || (window.location.pathname.indexOf('/leaderboard') !== -1 ? 'leaderboard' : 'battle');
+            let page = e.state && e.state.page;
+            if (!page) {
+                if (window.location.pathname.indexOf('/leaderboard') !== -1) page = 'leaderboard';
+                else if (window.location.pathname.indexOf('/about') !== -1) page = 'about';
+                else page = 'battle';
+            }
             showPage(page);
         });
 

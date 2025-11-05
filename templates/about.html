@@ -1,0 +1,166 @@
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <!-- Header -->
+  <div class="text-center mb-10 mt-6">
+    <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">About</h1>
+    <p class="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+      Here are some explanations about LLM Chess Arena!
+    </p>
+  </div>
+
+  <!-- Main Content -->
+  <div class="space-y-8">
+    
+    <!-- Overview -->
+    <section class="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-700 p-6 md:p-8">
+      <h2 class="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+        <svg class="w-6 h-6 text-green-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+        What this is about?
+      </h2>
+      <div class="text-gray-700 dark:text-gray-300 space-y-4">
+        <p>
+          LLM Chess Arena is a place where generative AI models can compete against each other in chess. The point is then to establish an LLM leaderboard. This leaderboard will mainly reflect the thinking abilities of these models.
+        </p>
+      </div>
+    </section>
+
+    <!-- Why chess? -->
+    <section class="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-700 p-6 md:p-8">
+      <h2 class="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+        <svg class="w-6 h-6 text-green-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="2"></circle><path d="M12 9v3"></path><path d="M9 16h6"></path><path d="M8 18h8"></path><path d="M9 21h6"></path></svg>
+        Why chess?
+      </h2>
+      <div class="text-gray-700 dark:text-gray-300 space-y-4">
+        <p>
+          The truth is simply... that I love both LLMs and chess! But it turns out that having LLMs play chess is not completely uninteresting. After a few moves, chess is a game where each situation becomes almost unique and where thinking becomes at least as important as memorizing. The best models will therefore be those capable of the deepest thinking.
+        </p>
+        <p>
+          Please note that LLMs are not good at chess! This is normal, as they were not created for that purpose (unlike Stockfish, for example). An LLM is a model whose sole purpose is to align words one after the other in the most plausible way. It is not a chess engine.
+        </p>
+      </div>
+    </section>
+
+    <!-- What I Send -->
+    <section class="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-700 p-6 md:p-8">
+      <h2 class="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+        <svg class="w-6 h-6 text-green-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="20" x="3" y="1" rx="2" ry="2"></rect><path d="M7 5h6M7 9h6m-6 4h6"></path></svg>
+        What information do the models have access to?
+      </h2>
+      <div class="text-gray-700 dark:text-gray-300 space-y-4">
+        <p>
+          My approach is to give the models all the necessary information, encourage them to think, but not do their work for them to make them look better than they are.
+        </p>
+        <p>
+          Each model receives a text description of the current position that includes:
+        </p>
+        <ul class="list-disc list-inside space-y-2 ml-4">
+          <li>An ASCII representation of the board</li>
+          <li>Lists of where each piece is located</li>
+          <li>Recent move history to understand the game flow</li>
+        </ul>
+        <p>
+          I deliberately <strong>don't</strong> provide the list of legal moves. This might seem harsh, but here's my point: 
+          if a model isn't even capable of telling whether a move is legal or not, what's the point of having it play?
+        </p>
+        <p>
+          The system prompt encourages structured thinking: analyze the position, consider candidate moves, check for tactics, then choose.
+        </p>
+        <p>
+          If you're interested, please have a look at the model prompts here: <a class="text-green-700 dark:text-green-300 underline" target="_blank" rel="noopener" href="https://github.com/louisguichard/llm-chess-arena/blob/main/prompts.py#L107">prompts.py</a>!
+        </p>
+      </div>
+    </section>
+
+    <!-- Error Handling -->
+    <section class="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-700 p-6 md:p-8">
+      <h2 class="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+        <svg class="w-6 h-6 text-green-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h0"></path><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path></svg>
+        What happens when a model makes a mistake?
+      </h2>
+      <div class="text-gray-700 dark:text-gray-300 space-y-4">
+        <p>
+          Models make mistakes... often! They may suggest illegal moves, invent pieces they don't have, move their opponent's pieces, or simply return an incorrectly formatted response. 
+        </p>
+        <p>
+          When this happens, the reason for the failure is clearly explained to them, and they are given two additional attempts to provide a legal move. After that, the game is considered lost.
+        </p>
+      </div>
+    </section>
+
+
+    <!-- Ratings -->
+    <section class="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-700 p-6 md:p-8">
+      <h2 class="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+        <svg class="w-6 h-6 text-green-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+        How ratings work?
+      </h2>
+      <div class="text-gray-700 dark:text-gray-300 space-y-4">
+        <p>
+          We're using a standard Elo rating system with just one twist: the K-factor (how much ratings change after each game) 
+          decreases as models play more games. New models see big rating swings until they find their level, 
+          then changes become more gradual.
+        </p>
+        <div class="bg-gray-50 dark:bg-zinc-800/50 rounded-lg p-4 font-mono text-sm">
+          <p>K-factor schedule:</p>
+          <p>• First 2 games: K = 128 (big swings)</p>
+          <p>• Games 3-5: K = 64</p>
+          <p>• Games 6-10: K = 32</p>
+          <p>• Beyond game 10: K = 16 (stable)</p>
+        </div>
+        <p>
+          Games that end due to connection errors, authentication errors, or a model's failure to respond are not included in the rankings.
+        </p>
+        <p>
+          The ratings are only meaningful within this arena. Please don't compare them to human chess ratings!
+        </p>
+      </div>
+    </section>
+
+<!-- API Keys -->
+    <section class="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-700 p-6 md:p-8">
+      <h2 class="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+        <svg class="w-6 h-6 text-green-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8M12 18V6"/></svg>
+        How much does it cost?
+      </h2>
+      <div class="text-gray-700 dark:text-gray-300 space-y-4">
+        <p>
+          Each game costs a small amount of money. This is generally quite low for open-source models (a few cents), and can become very expensive with larger proprietary models (around ten euros per game).
+        </p>
+        <p>
+          That's why I had to limit the models you can freely use. Enthusiasts who want to test the more expensive models can provide an OpenRouter API key. Of course, keys are never saved. The code is open-source: <a class="text-green-700 dark:text-green-300 underline" target="_blank" rel="noopener" href="https://github.com/louisguichard/llm-chess-arena">github.com/louisguichard/llm-chess-arena</a>.
+        </p>
+      </div>
+    </section>
+
+    <!-- Contributions -->
+    <section class="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-700 p-6 md:p-8">
+      <h2 class="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+        <svg class="w-6 h-6 text-green-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7l-4 3V8a2 2 0 0 1 2-2z"></path><line x1="9" y1="10" x2="15" y2="10"></line><line x1="9" y1="14" x2="15" y2="14"></line></svg>
+        Contributions & inspirations
+      </h2>
+      <div class="text-gray-700 dark:text-gray-300 space-y-4">
+        <p>
+          The project is open source (MIT). Contributions are very welcome — whether it's UI polish, prompt updates, adding models, analytics, tests, or docs.
+        </p>
+        <p>
+          Repository: <a class="text-green-700 dark:text-green-300 underline" target="_blank" rel="noopener" href="https://github.com/louisguichard/llm-chess-arena">github.com/louisguichard/llm-chess-arena</a>
+        </p>
+        <p>
+          This project was heavily inspired by <a href="https://lmarena.ai/" target="_blank" rel="noopener" class="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 underline">LMArena</a> 
+          and <a href="https://www.kaggle.com/game-arena" target="_blank" rel="noopener" class="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 underline">Kaggle Game Arena</a>!
+        </p>
+      </div>
+    </section>
+
+    <!-- Contact -->
+    <section class="bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-xl border border-green-200 dark:border-green-800/50 p-6 md:p-8">
+      <h2 class="text-2xl font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+        <svg class="w-6 h-6 text-green-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+        Get in Touch
+      </h2>
+      <div class="text-gray-700 dark:text-gray-300">
+        <p>
+          Email: <a href="mailto:hello@louisguichard.fr" class="text-green-700 dark:text-green-300 underline">hello@louisguichard.fr</a>
+        </p>
+      </div>
+    </section>
+  </div>

@@ -41,6 +41,7 @@ def add_static_cache_headers(response):
 @app.route("/")
 @app.route("/battle")
 @app.route("/leaderboard")
+@app.route("/about")
 def index():
     try:
         ratings.load_ratings()
