@@ -112,6 +112,10 @@ class LLMClient:
                 for provider in providers
                 if "response_format" in provider.get("supported_parameters", [])
             ]
+            if model_to_call == "minimax/minimax-m2:free":
+                providers_with_format = [
+                    provider["provider_name"] for provider in providers
+                ]
             log.debug(
                 f"Providers supporting response_format for {model_to_call}: {providers_with_format}"
             )
