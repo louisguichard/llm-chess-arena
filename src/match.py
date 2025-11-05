@@ -6,14 +6,14 @@ import time
 import chess
 import chess.pgn
 import json
-from prompts import (
+from src.prompts import (
     SYSTEM_PROMPT,
     build_user_prompt,
     RetryReason,
     build_retry_message,
 )
-from gcp import write_file_to_gcs, write_json_to_gcs
-from logger import log
+from src.gcp import write_file_to_gcs, write_json_to_gcs
+from src.logger import log
 
 
 class ChessGame:

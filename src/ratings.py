@@ -1,6 +1,6 @@
 """Update Elo ratings."""
 
-from gcp import read_json_from_gcs, write_json_to_gcs
+from src.gcp import read_json_from_gcs, write_json_to_gcs
 
 # K-factor controls how fast ratings move.
 RATINGS_FILE = "ratings.json"

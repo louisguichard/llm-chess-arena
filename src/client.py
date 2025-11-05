@@ -8,9 +8,9 @@ import requests
 from openai import OpenAI
 
 from dotenv import load_dotenv
-from logger import log
-from prompts import JSON_SCHEMA
-from utils import read_models_from_file
+from src.logger import log
+from src.prompts import JSON_SCHEMA
+from src.utils import read_models_from_file
 
 # Load API keys from environment variables
 load_dotenv()
