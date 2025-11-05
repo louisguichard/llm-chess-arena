@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+  .status-dot { width: 10px; height: 10px; border-radius: 9999px; background-color: #d1d5db; }
+  .status-dot.ok { background-color: #16a34a; }
+  .status-dot.fail { background-color: #dc2626; }
+  .status-dot.pending { background-color: #f59e0b; }
+  .cell-mono { font-variant-numeric: tabular-nums; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-8">
+  <div class="mb-6">
+    <h1 class="text-2xl md:text-3xl font-bold">Model Status</h1>
+    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Quick connectivity check for each model. Shows provider, response time, and errors.</p>
+  </div>
+
+  <div id="locked-panel" class="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 p-4 mb-6 hidden">
+    <div class="flex items-start gap-3">
+      <div class="mt-1"><span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500"></span></div>
+      <div>
+        <p class="font-medium text-amber-800 dark:text-amber-200">API keys required</p>
+        <p class="text-sm text-amber-800/90 dark:text-amber-300/90 mt-1">This page is available only after entering your API keys. Use the button below to add them, then click Re-check.</p>
+        <div class="mt-3 flex gap-2">
+          <button id="open-keys" class="px-3 py-1.5 rounded-md bg-amber-600 text-white">Open API keys</button>
+          <button id="recheck-keys" class="px-3 py-1.5 rounded-md border border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-100">Re-check</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="dashboard" class="space-y-3">
+    <div class="flex items-center justify-between">
+      <div></div>
+      <div class="flex items-center gap-2">
+        <button id="test-all-btn" class="px-3 py-2 rounded-md bg-green-600 text-white">Test all</button>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+      <table class="min-w-full divide-y divide-gray-200 dark:divide-zinc-800">
+        <thead class="bg-gray-50 dark:bg-zinc-900">
+          <tr>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">Model</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">Provider</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">Latency</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">Status</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">Error</th>
+            <th class="px-4 py-3"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-zinc-800">
+          {% for model in models %}
+          <tr id="row-{{ model.id.replace('/', '-') }}" class="align-middle">
+            <td class="px-4 py-3">
+              <div class="font-medium">{{ model.name }}</div>
+              <div class="text-xs text-gray-500 dark:text-gray-400">{{ model.id }}</div>
+            </td>
+            <td class="px-4 py-3 provider text-sm">—</td>
+            <td class="px-4 py-3 latency text-sm cell-mono">—</td>
+            <td class="px-4 py-3">
+              <span class="inline-flex items-center gap-2">
+                <span class="status-dot pending"></span>
+                <span class="status-text text-sm text-gray-600 dark:text-gray-300">Pending</span>
+              </span>
+            </td>
+            <td class="px-4 py-3 error text-xs text-red-600 dark:text-red-400"></td>
+            <td class="px-4 py-3 text-right">
+              <button class="test-btn px-3 py-1.5 rounded-md border border-gray-200 dark:border-zinc-700 text-sm" data-model-id="{{ model.id }}">Test</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const dashboard = document.getElementById('dashboard');
+  const locked = document.getElementById('locked-panel');
+  const testAllBtn = document.getElementById('test-all-btn');
+
+  function getApiKeys() {
+    let a = ''; let b = '';
+    try { a = localStorage.getItem('user_openrouter_api_key') || ''; } catch(e) {}
+    try { b = localStorage.getItem('user_grok_api_key') || ''; } catch(e) {}
+    return { openrouter_api_key: a, grok_api_key: b };
+  }
+
+  function hasAnyKey() {
+    const k = getApiKeys();
+    return !!(k.openrouter_api_key || k.grok_api_key);
+  }
+
+  function updateGate() {
+    const ok = hasAnyKey();
+    if (ok) {
+      locked.classList.add('hidden');
+      dashboard.classList.remove('hidden');
+    } else {
+      dashboard.classList.add('hidden');
+      locked.classList.remove('hidden');
+    }
+  }
+
+  updateGate();
+
+  const openKeysBtn = document.getElementById('open-keys');
+  const recheckBtn = document.getElementById('recheck-keys');
+  if (openKeysBtn) openKeysBtn.addEventListener('click', () => {
+    const btn = document.getElementById('api-keys-btn');
+    if (btn) btn.click();
+  });
+  if (recheckBtn) recheckBtn.addEventListener('click', updateGate);
+
+  async function checkModelStatus(modelId) {
+    const rowId = `row-${modelId.replace('/', '-')}`;
+    const row = document.getElementById(rowId);
+    if (!row) return;
+    const dot = row.querySelector('.status-dot');
+    const statusText = row.querySelector('.status-text');
+    const providerCell = row.querySelector('.provider');
+    const latencyCell = row.querySelector('.latency');
+    const errorCell = row.querySelector('.error');
+
+    dot.classList.remove('ok', 'fail');
+    dot.classList.add('pending');
+    statusText.textContent = 'Checking...';
+    providerCell.textContent = '—';
+    latencyCell.textContent = '—';
+    errorCell.textContent = '';
+
+    const keys = getApiKeys();
+
+    try {
+      const res = await fetch('/api/check_model', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model_id: modelId, ...keys })
+      });
+      const result = await res.json();
+
+      if (result && result.status === 'success') {
+        dot.classList.remove('pending');
+        dot.classList.add('ok');
+        statusText.textContent = 'OK';
+        providerCell.textContent = result.provider || '—';
+        latencyCell.textContent = (typeof result.latency === 'number') ? `${result.latency.toFixed(1)} s` : '—';
+        errorCell.textContent = '';
+      } else {
+        dot.classList.remove('pending');
+        dot.classList.add('fail');
+        statusText.textContent = 'Error';
+        providerCell.textContent = (result && result.provider) ? result.provider : '—';
+        latencyCell.textContent = (result && typeof result.latency === 'number') ? `${result.latency.toFixed(1)} s` : '—';
+        errorCell.textContent = (result && result.message) ? String(result.message) : 'Unknown error';
+      }
+    } catch (e) {
+      dot.classList.remove('pending');
+      dot.classList.add('fail');
+      statusText.textContent = 'Error';
+      errorCell.textContent = String(e);
+    }
+  }
+
+  document.querySelectorAll('.test-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!hasAnyKey()) { updateGate(); return; }
+      const id = btn.dataset.modelId;
+      checkModelStatus(id);
+    });
+  });
+
+  if (testAllBtn) {
+    testAllBtn.addEventListener('click', async () => {
+      if (!hasAnyKey()) { updateGate(); return; }
+      const ids = Array.from(document.querySelectorAll('.test-btn')).map(b => b.dataset.modelId);
+      await Promise.all(ids.map(id => checkModelStatus(id)));
+    });
+  }
+});
+</script>
+{% endblock %}

@@ -127,6 +127,9 @@ class LLMClient:
             return None
 
     def chat(self, messages):
+        # Dynamic provider label; default by endpoint, overridden by chunk.provider when available
+        provider_label = "xAI" if self.model == "x-ai/grok-4" else "OpenRouter"
+        start = time.time()
         try:
             extra_body = {"usage": {"include": True}}
             if self.model == "openai/gpt-5-high":  # high reasoning effort
@@ -152,7 +155,6 @@ class LLMClient:
                 response_format = {"type": "json_schema", "json_schema": JSON_SCHEMA}
             log.info(f"Sending request to {model_to_call}")
             log.debug(f"Detailed prompt sent to {model_to_call}: {messages}")
-            start = time.time()
             with self.client.chat.completions.create(
                 model=model_to_call,
                 messages=messages,
@@ -161,11 +163,19 @@ class LLMClient:
                 stream=True,
             ) as stream:
                 contents = []
+                last_chunk = None
                 for i, chunk in enumerate(stream):
+                    last_chunk = chunk
+                    try:
+                        if getattr(chunk, "provider", None):
+                            provider_label = chunk.provider
+                    except Exception:
+                        pass
                     if i < 3 or i % 1000 == 0:
                         log.debug(f"Chunk {i}: {chunk}")
                     contents.append(chunk.choices[0].delta.content or "")
-                log.debug(f"Chunk {i} (last one): {chunk}")
+                if last_chunk is not None:
+                    log.debug(f"Chunk {i} (last one): {last_chunk}")
             content = "".join(contents)
             log.debug(f"Final content: {content}")
             latency = time.time() - start
@@ -174,34 +184,48 @@ class LLMClient:
                     if self.model == "x-ai/grok-4":
                         cost = 0
                         total_cost, upstream_cost = 0, 0
-                        # TODO: implement cost calculation for Grok 4
                     else:
-                        # Cost should be in the last chunk
-                        cost = chunk.usage.cost
+                        cost = last_chunk.usage.cost
                         upstream_cost = (
-                            chunk.usage.cost_details.get("upstream_inference_cost") or 0
+                            last_chunk.usage.cost_details.get("upstream_inference_cost")
+                            or 0
                         )
                         total_cost = cost + upstream_cost
                 except Exception as e:
                     log.warning(f"💰 Error getting cost from {self.model}: {e}")
                     total_cost, upstream_cost = 0, 0
-                move = json.loads(content).get("choice")
+                # Avoid hard failure if content isn't JSON
+                move = None
+                try:
+                    move = json.loads(content).get("choice")
+                except Exception:
+                    pass
                 log.info(
-                    f"Received response from {self.model} - Cost: {total_cost:.3f}€ (including {upstream_cost:.3f}€ upstream) - Latency: {latency:.1f}s - Move: {move}"
+                    f"Received response from {self.model} via {provider_label} - Cost: {total_cost:.3f}€ (including {upstream_cost:.3f}€ upstream) - Latency: {latency:.1f}s - Move: {move}"
                 )
                 log.debug(f"Detailed response from {self.model}: {content}")
                 return {
                     "completion": content,
                     "cost": total_cost,
                     "latency": latency,
+                    "provider": provider_label,
                 }
             else:
                 log.warning(
-                    f"No content received from {self.model} - Latency: {latency:.1f}s"
+                    f"No content received from {self.model} via {provider_label} - Latency: {latency:.1f}s"
                 )
-                return None
+                return {
+                    "error": "Empty response from model.",
+                    "latency": latency,
+                    "provider": provider_label,
+                }
         except Exception as e:
             if "401" in str(e):
                 raise RuntimeError(f"Authentication failed for {self.model}: {str(e)}")
             log.error(f"Error getting response from {self.model}: {e}")
-            return None
+            latency = time.time() - start
+            return {
+                "error": str(e),
+                "latency": latency,
+                "provider": provider_label,
+            }

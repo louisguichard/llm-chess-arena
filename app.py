@@ -19,6 +19,8 @@ import traceback
 from logger import log
 import json
 import uuid
+import chess
+from prompts import SYSTEM_PROMPT, build_user_prompt
 
 app = Flask(__name__)
 
@@ -128,6 +130,73 @@ def index():
             ["R", "N", "B", "Q", "K", "B", "N", "R"],
         ],
     )
+
+
+@app.route("/status")
+def status():
+    models = read_models_from_file(MODELS_FILE)
+    return render_template("status.html", models=models)
+
+
+@app.route("/api/check_model", methods=["POST"])
+def check_model():
+    data = request.get_json()
+    model_id = data.get("model_id")
+    user_openrouter_api_key = (data.get("openrouter_api_key") or "").strip()
+    user_grok_api_key = (data.get("grok_api_key") or "").strip()
+
+    if not model_id:
+        return jsonify({"error": "Model ID is required."}), 400
+
+    try:
+        client = LLMClient(
+            model_id,
+            user_openrouter_api_key=user_openrouter_api_key,
+            user_grok_api_key=user_grok_api_key,
+        )
+        # Use the initial board prompt for a realistic check
+        initial_board = chess.Board()
+        user_prompt = build_user_prompt(initial_board)
+        messages = [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_prompt},
+        ]
+        resp = client.chat(messages)
+        # Fallback provider label if not provided by client
+        fallback_provider = "xAI" if str(model_id).startswith("x-ai/") else "OpenRouter"
+        if resp and resp.get("completion"):
+            return jsonify(
+                {
+                    "status": "success",
+                    "provider": resp.get("provider") or fallback_provider,
+                    "latency": resp.get("latency"),
+                }
+            )
+        else:
+            # If client surfaced an error, pass it through precisely
+            message = None
+            provider = fallback_provider
+            latency = None
+            if isinstance(resp, dict):
+                message = resp.get("error")
+                provider = resp.get("provider") or fallback_provider
+                latency = resp.get("latency")
+            if not message:
+                message = "Empty response from model."
+            return jsonify(
+                {
+                    "status": "error",
+                    "message": message,
+                    "provider": provider,
+                    "latency": latency,
+                }
+            )
+    except Exception as e:
+        log.error(f"Error checking model {model_id}: {e}")
+        provider = "xAI" if str(model_id).startswith("x-ai/") else "OpenRouter"
+        return jsonify(
+            {"status": "error", "message": str(e), "provider": provider}
+        ), 500
 
 
 @app.route("/api/start_game", methods=["POST"])
