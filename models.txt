@@ -33,7 +33,7 @@ meta-llama/llama-4-maverick, Llama 4 Maverick, [Open-source, Fast]
 mistralai/mistral-medium-3.1, Mistral Medium 3.1
 
 # DeepSeek
-deepseek/deepseek-r1:free, DeepSeek R1, [Open-source]
+deepseek/deepseek-r1-0528, DeepSeek R1, [Open-source]
 deepseek/deepseek-chat-v3-0324, DeepSeek V3, [Open-source]
 deepseek/deepseek-chat-v3.1, DeepSeek V3.1, [Open-source]
 
