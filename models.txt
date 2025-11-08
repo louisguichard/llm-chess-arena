@@ -37,9 +37,13 @@ deepseek/deepseek-r1:free, DeepSeek R1, [Open-source]
 deepseek/deepseek-chat-v3-0324, DeepSeek V3, [Open-source]
 deepseek/deepseek-chat-v3.1, DeepSeek V3.1, [Open-source]
 
+# MoonshotAI
+moonshotai/kimi-k2-0905, Kimi K2, [Open-source]
+moonshotai/kimi-k2-thinking, Kimi K2 Thinking, [Open-source, Expensive]
+
 # Minimax
 minimax/minimax-m2:free, MiniMax M2, [Open-source]
 
-# Others
+# Qwen
 qwen/qwen3-30b-a3b, Qwen3 30B, [Open-source]
-moonshotai/kimi-k2-0905, Kimi K2, [Open-source]
+
