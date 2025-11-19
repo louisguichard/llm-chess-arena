@@ -329,6 +329,15 @@ def start_game():
                 entry["version"] += 1
                 cond.notify_all()
 
+        def cleanup():
+            import time
+
+            time.sleep(30)
+            games.pop(game_id, None)
+            log.info(f"Cleaned up game {game_id} from memory")
+
+        threading.Thread(target=cleanup, daemon=True).start()
+
     threading.Thread(target=run_game_loop, args=(game_id,), daemon=True).start()
 
     return jsonify({"game_id": game_id})
