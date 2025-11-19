@@ -420,6 +420,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     else if (result === '0-1') setEvalBar(0);
                 }
             } catch (e) {}
+
+            // Close the SSE connection now that the game is over
+            if (eventSource) {
+                try { eventSource.close(); } catch (e) {}
+                eventSource = null;
+            }
         }
     }
 
