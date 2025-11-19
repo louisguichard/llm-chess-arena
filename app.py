@@ -11,7 +11,6 @@ from flask import stream_with_context
 import json
 import uuid
 import chess
-import traceback
 from src.utils import read_models_from_file
 from src.ratings import RatingsTable
 from src.match import ChessGame
@@ -279,6 +278,59 @@ def start_game():
         f"Starting new game: {white_model_id} vs. {black_model_id} (ID: {game_id})"
     )
 
+    # Start the game loop in a background thread
+    def run_game_loop(game_id):
+        entry = games.get(game_id)
+        if not entry:
+            return
+
+        game = entry["game"]
+        lock = entry["lock"]
+        cond = entry["cond"]
+
+        log.info(f"Background thread started for game {game_id}")
+
+        while not game.is_over:
+            with lock:
+                if game.is_over:
+                    break
+
+                move_result = game.play_next_move(max_retries=2)
+
+                if move_result and move_result.get("is_over"):
+                    try:
+                        ratings.load_ratings()
+                    except Exception:
+                        pass
+                    total_moves = len(game.board.move_stack)
+                    white_moves = (total_moves + 1) // 2
+                    black_moves = total_moves // 2
+
+                    result = game.game.headers.get("Result")
+                    termination = game.game.headers.get("Termination")
+                    if result:
+                        ratings.apply_result(
+                            game.white_player.name(),
+                            game.black_player.name(),
+                            result,
+                            white_moves=white_moves,
+                            black_moves=black_moves,
+                            white_time=game.white_time,
+                            black_time=game.black_time,
+                            white_cost=game.white_cost,
+                            black_cost=game.black_cost,
+                            termination=termination,
+                        )
+                        log.debug(
+                            f"Updated ratings: {game.white_player.name()} vs {game.black_player.name()} -> {result}"
+                        )
+
+            with cond:
+                entry["version"] += 1
+                cond.notify_all()
+
+    threading.Thread(target=run_game_loop, args=(game_id,), daemon=True).start()
+
     return jsonify({"game_id": game_id})
 
 
@@ -289,74 +341,17 @@ def play_move(game_id):
         return jsonify({"error": "Game not found."}), 404
 
     game = entry["game"]
-    lock = entry["lock"]
-    cond = entry["cond"]
 
-    try:
-        with lock:
-            if game.is_over:
-                return jsonify(
-                    {
-                        "status": "game_over",
-                        "result": game.game.headers.get("Result"),
-                        "termination": game.game.headers.get("Termination"),
-                    }
-                )
+    if game.is_over:
+        return jsonify(
+            {
+                "status": "game_over",
+                "result": game.game.headers.get("Result"),
+                "termination": game.game.headers.get("Termination"),
+            }
+        )
 
-            move_result = game.play_next_move(max_retries=2)
-
-            if move_result and move_result.get("is_over"):
-                try:
-                    ratings.load_ratings()
-                except Exception:
-                    pass
-                total_moves = len(game.board.move_stack)
-                white_moves = (total_moves + 1) // 2
-                black_moves = total_moves // 2
-
-                result = game.game.headers.get("Result")
-                termination = game.game.headers.get("Termination")
-                if result:
-                    ratings.apply_result(
-                        game.white_player.name(),
-                        game.black_player.name(),
-                        result,
-                        white_moves=white_moves,
-                        black_moves=black_moves,
-                        white_time=game.white_time,
-                        black_time=game.black_time,
-                        white_cost=game.white_cost,
-                        black_cost=game.black_cost,
-                        termination=termination,
-                    )
-                    log.debug(
-                        f"Updated ratings: {game.white_player.name()} vs {game.black_player.name()} -> {result}"
-                    )
-
-                # The game is over, but we send the last move to the client
-                # The client will then make one more request, and the game.is_over check at the top
-                # will catch it and return the final game over state.
-                with cond:
-                    entry["version"] += 1
-                    cond.notify_all()
-                with cond:
-                    entry["version"] += 1
-                    cond.notify_all()
-                return jsonify(move_result)
-
-            with cond:
-                entry["version"] += 1
-                cond.notify_all()
-            return jsonify(move_result)
-
-    except Exception as e:
-        log.error(f"Error during game execution: {e}")
-        log.error(traceback.format_exc())
-        error_event = {
-            "error": "An internal error occurred during the game.",
-            "details": str(e),
-        }
-        return jsonify(error_event), 500
+    return jsonify({"status": "success"})
 
 
 @app.route("/api/game/<game_id>", methods=["GET"])
