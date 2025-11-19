@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let gameId = null;
     let isGameRunning = false;
     let spectatorMode = false;
+    let isGameFinished = false;
 
     let whiteTime = 0;
     let blackTime = 0;
@@ -259,6 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			try { highlightFromFEN('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'); } catch (e) {}
 			fenHistory = ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'];
 			currentFenIndex = 0;
+            isGameFinished = false;
 			updateNavUI();
 		}
 
@@ -368,6 +370,7 @@ document.addEventListener('DOMContentLoaded', () => {
         rebuildMoveHistory(Array.isArray(state.moves) ? state.moves : []);
 
         if (state.is_over) {
+            isGameFinished = true;
             const result = state.result;
             const termination = state.termination || '';
             const whiteName = whiteDisplayName || "White";
@@ -610,7 +613,10 @@ document.addEventListener('DOMContentLoaded', () => {
             eventSource.onerror = () => {
                 try { eventSource.close(); } catch (e) {}
                 eventSource = null;
-                if (isGameRunning || spectatorMode) setTimeout(openEventStream, 1000);
+                // Only reconnect if the game is NOT finished
+                if ((isGameRunning || spectatorMode) && !isGameFinished) {
+                    setTimeout(openEventStream, 1000);
+                }
             };
         } catch (e) {
             // Fallback to polling-only

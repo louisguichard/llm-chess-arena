@@ -442,8 +442,8 @@ def stream_game_state(game_id):
                     "black_model_id": data.get("black_player"),
                 }
                 yield sse("state", state)
-                while True:
-                    yield sse("ping", {})
+                # Game is over, just send state once and close connection
+                return
 
             response = Response(event_stream_finished(), mimetype="text/event-stream")
             response.headers["Cache-Control"] = "no-store"
@@ -477,11 +477,21 @@ def stream_game_state(game_id):
     def event_stream():
         last_version = -1
         yield sse("state", build_state())
+
+        # If game is already over, stop here
+        if entry["game"].is_over:
+            return
+
         last_version = entry.get("version", 0)
         while True:
             with cond:
                 cond.wait(timeout=15)
                 current_version = entry.get("version", 0)
+
+            if entry["game"].is_over:
+                yield sse("state", build_state())
+                return
+
             if current_version != last_version:
                 last_version = current_version
                 yield sse("state", build_state())
