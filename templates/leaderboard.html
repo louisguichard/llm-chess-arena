@@ -1,5 +1,5 @@
 {% from 'logos.html' import render_logo %}
-<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="w-fit max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col items-center">
     <div class="flex items-center gap-3 mb-6 justify-center">
         <svg class="w-8 h-8 text-green-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg>
         <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Leaderboard</h1>
@@ -12,34 +12,34 @@
             <span>Open-source filter</span>
         </button>
     </div>
-    <div class="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-700 shadow-sm overflow-hidden">
+    <div class="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-700 shadow-sm overflow-hidden w-full md:w-auto">
         <!-- Desktop Table -->
         <div class="hidden md:block overflow-x-auto">
-            <table class="w-full">
+            <table class="w-auto text-sm mx-auto">
                 <thead>
                     <tr class="border-b border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800/50">
-                        <th class="sticky top-0 z-10 px-4 py-4 text-center font-semibold text-xs uppercase tracking-wide text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-zinc-800/50">#</th>
-                        <th class="sticky top-0 z-10 px-4 py-4 text-left font-semibold text-xs uppercase tracking-wide text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-zinc-800/50">Player</th>
-                        <th class="sticky top-0 z-10 px-4 py-4 text-right font-semibold text-xs uppercase tracking-wide text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-zinc-800/50">ELO</th>
-                        <th class="sticky top-0 z-10 px-4 py-4 text-center font-semibold text-xs uppercase tracking-wide text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-zinc-800/50">Games</th>
-                        <th class="sticky top-0 z-10 px-4 py-4 text-center font-semibold text-xs uppercase tracking-wide text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-zinc-800/50">W/D/L</th>
-                        <th class="sticky top-0 z-10 px-4 py-4 text-center font-semibold text-xs uppercase tracking-wide text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-zinc-800/50">Time/Move</th>
-                        <th class="sticky top-0 z-10 px-2 py-4 text-center font-semibold text-xs uppercase tracking-wide text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-zinc-800/50">Cost/Game</th>
+                        <th class="sticky top-0 z-10 px-3 py-3 text-center font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-zinc-800/50">#</th>
+                        <th class="sticky top-0 z-10 px-3 py-3 text-left font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-zinc-800/50">Player</th>
+                        <th class="sticky top-0 z-10 px-3 py-3 text-center font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-zinc-800/50">ELO</th>
+                        <th class="sticky top-0 z-10 px-3 py-3 text-center font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-zinc-800/50">Games</th>
+                        <th class="sticky top-0 z-10 px-3 py-3 text-center font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-zinc-800/50">W/D/L</th>
+                        <th class="sticky top-0 z-10 px-3 py-3 text-center font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-zinc-800/50">Time/Move</th>
+                        <th class="sticky top-0 z-10 px-3 py-3 text-center font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-zinc-800/50">Cost/Game</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for llm in leaderboard_data %}
                         <tr class="border-b border-gray-200 dark:border-zinc-800 last:border-b-0 hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors odd:bg-white even:bg-gray-50 dark:odd:bg-transparent dark:even:bg-zinc-800/30" data-name="{{ llm.name|lower }}" data-provider="{{ llm.provider|lower }}" data-tags="{{ llm.tags|join(' ')|lower }}">
-                            <td class="px-4 py-4 text-center font-medium text-gray-500 dark:text-gray-400">{{ loop.index }}</td>
-                            <td class="px-4 py-4">
+                            <td class="px-3 py-3 text-center font-medium text-gray-500 dark:text-gray-400">{{ loop.index }}</td>
+                            <td class="px-3 py-3 max-w-xs">
                                 <div class="flex items-center">
                                     <div class="w-10 h-10 mr-3 flex-shrink-0">
                                         {{ render_logo(llm.provider, 'h-10 w-10', 'text-lg') }}
                                     </div>
-                                    <div class="flex-grow">
-                                        <p class="font-semibold text-black dark:text-gray-100">{{ llm.name }}</p>
-                                        <div class="flex items-center gap-2">
-                                            <p class="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ llm.provider }}</p>
+                                    <div class="flex-grow min-w-0">
+                                        <p class="font-semibold text-black dark:text-gray-100 truncate">{{ llm.name }}</p>
+                                        <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ llm.provider }}</p>
                                             {% if llm.tags %}
                                                 {% set tag_explanations = {
                                                     'Fast': 'Each move usually takes less than 20s.',
@@ -47,9 +47,9 @@
                                                     'Expensive': 'Each game usually costs more than €0.50.',
                                                     'Deactivated': 'This model is currently unavailable.'
                                                 } %}
-                                                <div class="flex gap-1">
+                                                <div class="flex flex-wrap gap-1">
                                                     {% for tag in llm.tags %}
-                                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium whitespace-nowrap 
+                                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium whitespace-nowrap 
                                                             {% if tag == 'Open-source' %}bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300
                                                             {% elif tag == 'Expensive' %}bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300
                                                             {% elif tag == 'Fast' %}bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300
@@ -64,11 +64,11 @@
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-4 py-4 text-right">
+                            <td class="px-3 py-3 text-center">
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 dark:bg-zinc-800 font-mono text-sm font-semibold text-gray-800 dark:text-gray-200">{{ llm.elo | round | int }}</span>
                             </td>
-                            <td class="px-4 py-4 text-center font-mono text-gray-600 dark:text-gray-300">{{ llm.matchesPlayed }}</td>
-                            <td class="px-4 py-4 text-center">
+                            <td class="px-3 py-3 text-center font-mono text-gray-600 dark:text-gray-300">{{ llm.matchesPlayed }}</td>
+                            <td class="px-3 py-3 text-center">
                                 {% if llm.matchesPlayed > 0 %}
                                     {% set wp = (llm.wins / llm.matchesPlayed * 100) | round | int %}
                                     {% set dp = (llm.draws / llm.matchesPlayed * 100) | round | int %}
@@ -80,10 +80,10 @@
                                     </div>
                                 {% else %}-{% endif %}
                             </td>
-                            <td class="px-4 py-4 text-center font-mono text-gray-600 dark:text-gray-300">
+                            <td class="px-3 py-3 text-center font-mono text-gray-600 dark:text-gray-300">
                                 {% if llm.moves > 0 %}{{ (llm.avgTimePerMove) | round | int }}s{% else %}-{% endif %}
                             </td>
-                            <td class="px-4 py-4 text-center font-mono text-gray-600 dark:text-gray-300">
+                            <td class="px-3 py-3 text-center font-mono text-gray-600 dark:text-gray-300">
                                 {% if llm.id == 'x-ai/grok-4' %}-{% elif llm.moves > 0 %}€{{ "%.1f"|format((llm.avgCostPerMove * 50) | round(1)) }}{% else %}-{% endif %}
                             </td>
                         </tr>
