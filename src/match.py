@@ -156,7 +156,7 @@ class ChessGame:
                     }
                 continue
 
-            completion = response_data["completion"]
+            completion = response_data.get("completion")
             cost = response_data.get("cost", 0)
             latency = response_data.get("latency", 0)
             # Accumulate totals across attempts
