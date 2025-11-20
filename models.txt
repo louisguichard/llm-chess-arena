@@ -9,7 +9,7 @@ openai/gpt-5-nano, GPT-5 Nano
 openai/o3, o3, [Expensive]
 openai/gpt-4o, GPT-4o, [Fast]
 openai/gpt-oss-120b, GPT-OSS 120B, [Open-source, Fast]
-openai/gpt-oss-20b, GPT-OSS 20B, [Open-source, Fast]
+openai/gpt-oss-20b, GPT-OSS 20B, [Open-source]
 
 # Google
 google/gemini-3-pro-preview, Gemini 3 Pro, [Expensive]
@@ -24,6 +24,7 @@ anthropic/claude-sonnet-4, Claude Sonnet 4, [Expensive, Fast]
 anthropic/claude-sonnet-4.5, Claude Sonnet 4.5, [Expensive]
 
 # xAI
+x-ai/grok-4.1-fast, Grok 4.1 Fast, [Expensive]
 x-ai/grok-4, Grok 4, [Expensive]
 x-ai/grok-3, Grok 3, [Expensive]
 
@@ -31,7 +32,7 @@ x-ai/grok-3, Grok 3, [Expensive]
 meta-llama/llama-4-maverick, Llama 4 Maverick, [Open-source, Fast]
 
 # Mistral AI
-mistralai/mistral-medium-3.1, Mistral Medium 3.1
+mistralai/mistral-medium-3.1, Mistral Medium 3.1, [Fast]
 
 # DeepSeek
 deepseek/deepseek-r1-0528, DeepSeek R1, [Open-source]
