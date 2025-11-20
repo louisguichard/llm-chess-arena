@@ -189,7 +189,7 @@ class ChessGame:
                     else:
                         error_reason = RetryReason.ILLEGAL_MOVE
                 # Check if move is legal
-                if move == "resign" or move in self.board.legal_moves:
+                if move == "resign":
                     return {
                         "move": move,
                         "rationale": result.get("rationale"),
@@ -197,6 +197,24 @@ class ChessGame:
                         "cost": total_cost,
                         "latency": total_latency,
                     }
+
+                if move in self.board.legal_moves:
+                    # Check for fivefold repetition
+                    self.board.push(move)
+                    is_fivefold = self.board.is_fivefold_repetition()
+                    self.board.pop()
+
+                    if is_fivefold:
+                        error_reason = RetryReason.FIVEFOLD_REPETITION
+                        attempted = result.get("move_uci")
+                    else:
+                        return {
+                            "move": move,
+                            "rationale": result.get("rationale"),
+                            "reasoning": result.get("reasoning"),
+                            "cost": total_cost,
+                            "latency": total_latency,
+                        }
                 else:
                     error_reason = RetryReason.ILLEGAL_MOVE
                     attempted = result.get("move_uci")

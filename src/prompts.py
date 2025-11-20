@@ -40,6 +40,7 @@ class RetryReason(Enum):
     MISSING_BREAKDOWN_KEY = "The model didn't return a valid response."
     MISSING_ANALYSIS_KEY = "The model didn't return a valid response."
     INVALID_UCI_FORMAT = "The model didn't respected the imposed response format."
+    FIVEFOLD_REPETITION = "The move would lead to a fivefold repetition."
     AUTHENTICATION_FAILED = "Authentication failed. Please verify your API keys."
 
 
@@ -267,6 +268,19 @@ Valid output example:
 
     if reason == RetryReason.MISSING_ANALYSIS_KEY:
         return "Your JSON is missing the required 'analysis' key. Return a JSON object with 'analysis', 'breakdown', and 'choice' keys."
+
+    if reason == RetryReason.FIVEFOLD_REPETITION:
+        if attempted:
+            return (
+                f"The move '{attempted}' would result in a fivefold repetition, which is an automatic draw. "
+                "Please choose a different move to try to win the game. "
+                "Return ONLY the JSON object."
+            )
+        return (
+            "Your proposed move would result in a fivefold repetition, which is an automatic draw. "
+            "Please choose a different move to try to win the game. "
+            "Return ONLY the JSON object."
+        )
 
     # Not used anymore
     # if reason == RetryReason.EMPTY_RESPONSE:
