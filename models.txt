@@ -47,6 +47,7 @@ deepseek/deepseek-chat-v3.1, DeepSeek V3.1, [Open-source]
 # MoonshotAI
 moonshotai/kimi-k2-0905, Kimi K2, [Open-source]
 moonshotai/kimi-k2-thinking, Kimi K2 Thinking, [Open-source, Expensive]
+moonshotai/kimi-k2.5, Kimi K2.5, [Open-source, Expensive]
 
 # Minimax
 minimax/minimax-m2.1, MiniMax M2.1, [Open-source]
