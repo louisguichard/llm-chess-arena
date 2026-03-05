@@ -173,7 +173,8 @@ class LLMClient:
                         pass
                     if i < 3 or i % 1000 == 0:
                         log.debug(f"Chunk {i}: {chunk}")
-                    contents.append(chunk.choices[0].delta.content or "")
+                    if chunk.choices:
+                        contents.append(chunk.choices[0].delta.content or "")
                 if last_chunk is not None:
                     log.debug(f"Chunk {i} (last one): {last_chunk}")
             content = "".join(contents)
