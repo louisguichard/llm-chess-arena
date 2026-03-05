@@ -17,9 +17,6 @@ load_dotenv()
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 if not OPENROUTER_API_KEY:
     raise RuntimeError("OPENROUTER_API_KEY not found in environment variables")
-GROK_API_KEY = os.getenv("GROK_API_KEY")
-if not GROK_API_KEY:
-    raise RuntimeError("GROK_API_KEY not found in environment variables")
 MODELS_FILE = "models.txt"
 
 
@@ -35,16 +32,12 @@ class LLMClient:
         self,
         model,
         user_openrouter_api_key=None,
-        user_grok_api_key=None,
     ):
         self.model = model
         self.is_expensive = self.is_expensive_model()
 
-        # API keys
         self.user_openrouter_api_key = user_openrouter_api_key
-        self.user_grok_api_key = user_grok_api_key
         self.env_openrouter_api_key = OPENROUTER_API_KEY
-        # self.env_grok_api_key = GROK_API_KEY  # not used anymore
         self.api_key = self.select_api_key()
         self.client = self.build_client()
 
@@ -61,44 +54,25 @@ class LLMClient:
         return True
 
     def select_api_key(self):
-        api_key = None
         if self.is_expensive:
-            if self.model == "x-ai/grok-4":
-                api_key = self.user_grok_api_key
-            else:
-                api_key = self.user_openrouter_api_key
-            if not api_key:
+            if not self.user_openrouter_api_key:
                 raise ValueError(
                     "Custom API key is required for using expensive models."
                 )
-        else:
-            api_key = self.env_openrouter_api_key
-        return api_key
+            return self.user_openrouter_api_key
+        return self.env_openrouter_api_key
 
     def build_client(self):
-        if self.model == "x-ai/grok-4":
-            client = OpenAI(
-                base_url="https://api.x.ai/v1",
-                api_key=self.api_key,
-                timeout=httpx.Timeout(
-                    connect=10,  # max to establish the connection
-                    read=120,  # max between different chunks
-                    write=10,  # max to send data
-                    pool=600,  # max lifetime of the connection
-                ),
-            )
-        else:
-            client = OpenAI(
-                base_url="https://openrouter.ai/api/v1",
-                api_key=self.api_key,
-                timeout=httpx.Timeout(
-                    connect=10,  # max to establish the connection
-                    read=120,  # max between different chunks
-                    write=10,  # max to send data
-                    pool=600,  # max lifetime of the connection
-                ),
-            )
-        return client
+        return OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=self.api_key,
+            timeout=httpx.Timeout(
+                connect=10,
+                read=120,
+                write=10,
+                pool=600,
+            ),
+        )
 
     def get_openrouter_providers(self, model_to_call):
         headers = {"Authorization": f"Bearer {self.api_key}"}
@@ -127,28 +101,23 @@ class LLMClient:
             return None
 
     def chat(self, messages):
-        # Dynamic provider label; default by endpoint, overridden by chunk.provider when available
-        provider_label = "xAI" if self.model == "x-ai/grok-4" else "OpenRouter"
+        provider_label = "OpenRouter"
         start = time.time()
         try:
             extra_body = {"usage": {"include": True}}
             if self.model == "openai/gpt-5-high":  # high reasoning effort
                 model_to_call = "openai/gpt-5"
                 extra_body["reasoning"] = {"effort": "high"}
-            elif self.model == "x-ai/grok-4":
-                model_to_call = "grok-4"
             else:
                 model_to_call = self.model
 
-            # Restrict to providers that support response_format for this model
-            if self.model != "x-ai/grok-4":
-                providers = self.get_openrouter_providers(model_to_call)
-                if providers:
-                    extra_body["provider"] = {"only": providers}
-                else:
-                    log.warning(
-                        f"No provider supports response_format for {model_to_call}. Proceeding without choosing a provider."
-                    )
+            providers = self.get_openrouter_providers(model_to_call)
+            if providers:
+                extra_body["provider"] = {"only": providers}
+            else:
+                log.warning(
+                    f"No provider supports response_format for {model_to_call}. Proceeding without choosing a provider."
+                )
             if self.model == "deepseek/deepseek-chat-v3.1":
                 response_format = {"type": "json_object"}
             else:
@@ -182,16 +151,12 @@ class LLMClient:
             latency = time.time() - start
             if content:
                 try:
-                    if self.model == "x-ai/grok-4":
-                        cost = 0
-                        total_cost, upstream_cost = 0, 0
-                    else:
-                        cost = last_chunk.usage.cost
-                        upstream_cost = (
-                            last_chunk.usage.cost_details.get("upstream_inference_cost")
-                            or 0
-                        )
-                        total_cost = cost + upstream_cost
+                    cost = last_chunk.usage.cost
+                    upstream_cost = (
+                        last_chunk.usage.cost_details.get("upstream_inference_cost")
+                        or 0
+                    )
+                    total_cost = cost + upstream_cost
                 except Exception as e:
                     log.warning(f"💰 Error getting cost from {self.model}: {e}")
                     total_cost, upstream_cost = 0, 0

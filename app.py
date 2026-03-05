@@ -140,7 +140,6 @@ def check_model():
     data = request.get_json()
     model_id = data.get("model_id")
     user_openrouter_api_key = (data.get("openrouter_api_key") or "").strip()
-    user_grok_api_key = (data.get("grok_api_key") or "").strip()
 
     if not model_id:
         return jsonify({"error": "Model ID is required."}), 400
@@ -149,7 +148,6 @@ def check_model():
         client = LLMClient(
             model_id,
             user_openrouter_api_key=user_openrouter_api_key,
-            user_grok_api_key=user_grok_api_key,
         )
         # Use the initial board prompt for a realistic check
         initial_board = chess.Board()
@@ -160,7 +158,7 @@ def check_model():
         ]
         resp = client.chat(messages)
         # Fallback provider label if not provided by client
-        fallback_provider = "xAI" if str(model_id).startswith("x-ai/") else "OpenRouter"
+        fallback_provider = "OpenRouter"
         if resp and resp.get("completion"):
             return jsonify(
                 {
@@ -190,7 +188,7 @@ def check_model():
             )
     except Exception as e:
         log.error(f"Error checking model {model_id}: {e}")
-        provider = "xAI" if str(model_id).startswith("x-ai/") else "OpenRouter"
+        provider = "OpenRouter"
         return jsonify(
             {"status": "error", "message": str(e), "provider": provider}
         ), 500
@@ -202,7 +200,6 @@ def start_game():
     white_model_id = data.get("white_player")
     black_model_id = data.get("black_player")
     user_openrouter_api_key = (data.get("openrouter_api_key") or "").strip()
-    user_grok_api_key = (data.get("grok_api_key") or "").strip()
 
     if not white_model_id or not black_model_id:
         return jsonify({"error": "Both players must be selected."}), 400
@@ -232,12 +229,10 @@ def start_game():
     white_client = LLMClient(
         white_model_id,
         user_openrouter_api_key=user_openrouter_api_key,
-        user_grok_api_key=user_grok_api_key,
     )
     black_client = LLMClient(
         black_model_id,
         user_openrouter_api_key=user_openrouter_api_key,
-        user_grok_api_key=user_grok_api_key,
     )
 
     game = ChessGame(

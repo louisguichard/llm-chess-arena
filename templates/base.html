@@ -186,12 +186,7 @@
                       <div>
                         <label class="block text-sm mb-1">OpenRouter API key</label>
                         <input id="input-openrouter" type="password" class="w-full px-3 py-2 rounded-md border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800" placeholder="sk-or-v1-..." />
-                        <p class="text-xs text-gray-500 mt-1">Used for all the expensive models, except Grok 4.</p>
-                      </div>
-                      <div>
-                        <label class="block text-sm mb-1">xAI (Grok) API key</label>
-                        <input id="input-grok" type="password" class="w-full px-3 py-2 rounded-md border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800" placeholder="xai-..." />
-                        <p class="text-xs text-gray-500 mt-1">Used for Grok 4 only (not Grok 3).</p>
+                        <p class="text-xs text-gray-500 mt-1">Used for all the expensive models.</p>
                       </div>
                       <div class="mt-2">
                         <p class="text-xs font-semibold text-gray-600 dark:text-gray-300">Important notes</p>
@@ -213,16 +208,13 @@
 
             function getKeys() {
                 let a = '';
-                let b = '';
                 try { a = localStorage.getItem('user_openrouter_api_key') || ''; } catch(e) {}
-                try { b = localStorage.getItem('user_grok_api_key') || ''; } catch(e) {}
-                return { openrouter: a, grok: b };
+                return { openrouter: a };
             }
 
-            function setKeys(a, b) {
+            function setKeys(a) {
                 try {
                     if (a) localStorage.setItem('user_openrouter_api_key', a); else localStorage.removeItem('user_openrouter_api_key');
-                    if (b) localStorage.setItem('user_grok_api_key', b); else localStorage.removeItem('user_grok_api_key');
                 } catch(e) {}
             }
 
@@ -233,8 +225,7 @@
                     const isExpensive = (li.dataset.expensive === 'true');
                     if (!isExpensive) return;
                     const modelId = li.dataset.llmId || '';
-                    const needsGrok = modelId === 'x-ai/grok-4';
-                    const hasKey = needsGrok ? !!keys.grok : !!keys.openrouter;
+                    const hasKey = !!keys.openrouter;
                     const nameSpan = li.querySelector('span.block.truncate');
                     if (hasKey) {
                         // enable
@@ -251,7 +242,7 @@
                         li.dataset.deactivated = 'true';
                         li.classList.add('text-gray-400', 'dark:text-zinc-500', 'cursor-default', 'cursor-not-allowed', 'has-tooltip');
                         li.classList.remove('text-black', 'dark:text-gray-100', 'cursor-pointer', 'hover:bg-green-50', 'dark:hover:bg-green-900/20', 'hover:text-green-700', 'dark:hover:text-green-300');
-                        li.setAttribute('data-tooltip', needsGrok ? 'Requires xAI (Grok) API key' : 'Requires OpenRouter API key');
+                        li.setAttribute('data-tooltip', 'Requires OpenRouter API key');
                         if (nameSpan) {
                             nameSpan.classList.add('text-gray-400', 'dark:text-zinc-500');
                             nameSpan.classList.remove('text-black', 'dark:text-gray-100');
@@ -273,8 +264,7 @@
                         items.forEach(li => {
                             const isExpensive = (li.dataset.expensive === 'true');
                             const modelId = li.dataset.llmId || '';
-                            const needsGrok = modelId === 'x-ai/grok-4';
-                            const hasKey = needsGrok ? !!keys.grok : !!keys.openrouter;
+                            const hasKey = !!keys.openrouter;
                             const isTrulyDeactivated = (!isExpensive) && (li.dataset.deactivated === 'true');
                             const isLocked = (isExpensive && !hasKey) || isTrulyDeactivated;
                             if (isLocked) inactive.push(li); else active.push(li);
@@ -291,9 +281,7 @@
                 const dlg = ensureApiDialog();
                 const keys = getKeys();
                 const inA = dlg.querySelector('#input-openrouter');
-                const inB = dlg.querySelector('#input-grok');
                 inA.value = keys.openrouter || '';
-                inB.value = keys.grok || '';
                 dlg.classList.remove('hidden');
             });
 
@@ -307,8 +295,7 @@
                     dlg.classList.add('hidden');
                 } else if (isSave) {
                     const a = dlg.querySelector('#input-openrouter').value.trim();
-                    const b = dlg.querySelector('#input-grok').value.trim();
-                    setKeys(a, b);
+                    setKeys(a);
                     dlg.classList.add('hidden');
                     updateExpensiveAvailability();
                     // Re-open menu if user had it open to reflect changes immediately
@@ -323,9 +310,8 @@
                         });
                     } catch (e2) {}
                 } else if (isClear) {
-                    setKeys('', '');
+                    setKeys('');
                     dlg.querySelector('#input-openrouter').value = '';
-                    dlg.querySelector('#input-grok').value = '';
                     updateExpensiveAvailability();
                 }
             });

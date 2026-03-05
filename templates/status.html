@@ -90,13 +90,12 @@ document.addEventListener("DOMContentLoaded", () => {
   function getApiKeys() {
     let a = ''; let b = '';
     try { a = localStorage.getItem('user_openrouter_api_key') || ''; } catch(e) {}
-    try { b = localStorage.getItem('user_grok_api_key') || ''; } catch(e) {}
-    return { openrouter_api_key: a, grok_api_key: b };
+    return { openrouter_api_key: a };
   }
 
   function hasAnyKey() {
     const k = getApiKeys();
-    return !!(k.openrouter_api_key || k.grok_api_key);
+    return !!k.openrouter_api_key;
   }
 
   function updateGate() {

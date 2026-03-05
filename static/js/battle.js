@@ -513,13 +513,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         black_player: blackPlayer
                     };
                     try {
-                        const keys = (window.__arenaKeys && window.__arenaKeys.get) ? window.__arenaKeys.get() : { openrouter: '', grok: '' };
-                        // Only send keys if at least one selected model is expensive
+                        const keys = (window.__arenaKeys && window.__arenaKeys.get) ? window.__arenaKeys.get() : { openrouter: '' };
                         const selectedOptions = Array.from(document.querySelectorAll('.player-panel .llm-option')).filter(li => li.dataset && (li.dataset.llmId === whitePlayer || li.dataset.llmId === blackPlayer));
                         const isAnyExpensive = selectedOptions.some(li => li.dataset.expensive === 'true');
                         if (isAnyExpensive) {
                             if (keys.openrouter) payload.openrouter_api_key = keys.openrouter;
-                            if (keys.grok) payload.grok_api_key = keys.grok;
                         }
                     } catch (e) {}
                     return JSON.stringify(payload);
