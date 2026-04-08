@@ -11,20 +11,28 @@ openai/o3, o3, [Expensive]
 openai/gpt-4o, GPT-4o, [Fast]
 openai/gpt-oss-120b, GPT-OSS 120B, [Open-source, Fast]
 openai/gpt-oss-20b, GPT-OSS 20B, [Open-source]
+openai/gpt-5.4, GPT-5.4, [Expensive]
+openai/gpt-5.4-mini, GPT-5.4 Mini, [Fast]
+openai/gpt-5.4-nano, GPT-5.4 Nano, [Fast]
 
 # Google
-google/gemini-3-pro-preview, Gemini 3 Pro, [Expensive]
+google/gemini-3.1-pro-preview, Gemini 3.1 Pro, [Expensive]
 google/gemini-3-flash-preview, Gemini 3 Flash, [Fast]
 google/gemini-2.5-pro, Gemini 2.5 Pro, [Expensive]
 google/gemini-2.5-flash, Gemini 2.5 Flash, [Fast]
 google/gemini-2.5-flash-lite, Gemini 2.5 Flash Lite, [Fast]
+google/gemini-3.1-flash-lite-preview, Gemini 3.1 Flash Lite, [Fast]
 google/gemma-3-27b-it, Gemma 3 27B, [Open-source]
+google/gemma-4-26b-a4b-it, Gemma 4 26B A4B, [Open-source]
+google/gemma-4-31b-it, Gemma 4 31B, [Open-source]
 
 # Anthropic
 anthropic/claude-opus-4.5, Claude Opus 4.5, [Expensive]
 anthropic/claude-opus-4.1, Claude Opus 4.1, [Expensive]
 anthropic/claude-sonnet-4, Claude Sonnet 4, [Expensive, Fast]
 anthropic/claude-sonnet-4.5, Claude Sonnet 4.5, [Expensive]
+anthropic/claude-sonnet-4.6, Claude Sonnet 4.6, [Expensive]
+anthropic/claude-opus-4.6, Claude Opus 4.6, [Expensive]
 
 # xAI
 x-ai/grok-4.1-fast, Grok 4.1 Fast, [Expensive]
@@ -37,12 +45,14 @@ meta-llama/llama-4-maverick, Llama 4 Maverick, [Open-source, Fast]
 # Mistral AI
 mistralai/mistral-large-2512, Mistral Large 3, [Open-source]
 mistralai/mistral-medium-3.1, Mistral Medium 3.1, [Fast]
+mistralai/mistral-small-2603, Mistral Small 4, [Open-source]
 mistralai/ministral-14b-2512, Ministral 14b, [Open-source]
 
 # DeepSeek
 deepseek/deepseek-r1-0528, DeepSeek R1, [Open-source]
 deepseek/deepseek-chat-v3-0324, DeepSeek V3, [Open-source]
 deepseek/deepseek-chat-v3.1, DeepSeek V3.1, [Open-source]
+deepseek/deepseek-v3.2, DeepSeek V3.2, [Open-source]
 
 # MoonshotAI
 moonshotai/kimi-k2-0905, Kimi K2, [Open-source]
@@ -52,6 +62,7 @@ moonshotai/kimi-k2.5, Kimi K2.5, [Open-source, Expensive]
 # Minimax
 minimax/minimax-m2.1, MiniMax M2.1, [Open-source]
 minimax/minimax-m2, MiniMax M2, [Open-source]
+minimax/minimax-m2.7, MiniMax M2.7, [Open-source]
 
 # Qwen
 qwen/qwen3-30b-a3b, Qwen3 30B, [Open-source]
