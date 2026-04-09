@@ -250,20 +250,21 @@
                     }
                 });
 
-                // Reorder: keep original order, but move locked items (deactivated or expensive without key) to the end
+                // Reorder: recommended stay at top, then active, then locked at end
                 try {
                     const groups = Array.from(document.querySelectorAll('.player-selector-list'));
                     groups.forEach(ul => {
+                        const headers = Array.from(ul.querySelectorAll('.section-header'));
                         const items = Array.from(ul.querySelectorAll('.llm-option'));
-                        // Capture original order indices once
                         items.forEach((li, idx) => {
                             if (!li.dataset.initialIndex) li.dataset.initialIndex = String(idx);
                         });
+                        const recommended = items.filter(li => li.dataset.recommended === 'true');
+                        const rest = items.filter(li => li.dataset.recommended !== 'true');
                         const active = [];
                         const inactive = [];
-                        items.forEach(li => {
+                        rest.forEach(li => {
                             const isExpensive = (li.dataset.expensive === 'true');
-                            const modelId = li.dataset.llmId || '';
                             const hasKey = !!keys.openrouter;
                             const isTrulyDeactivated = (!isExpensive) && (li.dataset.deactivated === 'true');
                             const isLocked = (isExpensive && !hasKey) || isTrulyDeactivated;
@@ -271,6 +272,10 @@
                         });
                         active.sort((a, b) => Number(a.dataset.initialIndex) - Number(b.dataset.initialIndex));
                         inactive.sort((a, b) => Number(a.dataset.initialIndex) - Number(b.dataset.initialIndex));
+                        // Rebuild: header[0] + recommended + header[1] + active + inactive
+                        if (headers[0]) ul.appendChild(headers[0]);
+                        recommended.forEach(li => ul.appendChild(li));
+                        if (headers[1]) ul.appendChild(headers[1]);
                         active.forEach(li => ul.appendChild(li));
                         inactive.forEach(li => ul.appendChild(li));
                     });

@@ -17,23 +17,58 @@
             </div>
             <svg class="h-5 w-5 text-gray-400 ml-auto transition-transform" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
-        <ul class="player-selector-list hidden absolute z-10 mt-2 w-full bg-white dark:bg-zinc-800 shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
-            {% for llm in llms %}
-                <li data-llm-id="{{ llm.id }}" data-llm-name="{{ llm.name }}" data-llm-provider="{{ llm.provider }}" data-llm-elo="{{ llm.elo | round | int }}" data-deactivated="{{ 'true' if llm.deactivated else 'false' }}" data-expensive="{{ 'true' if 'Expensive' in llm.tags else 'false' }}" class="llm-option select-none relative py-3 pl-3 pr-4 {% if llm.deactivated %}text-gray-400 dark:text-zinc-500 cursor-default has-tooltip{% else %}text-black dark:text-gray-100 cursor-pointer hover:bg-green-50 dark:hover:bg-green-900/20 hover:text-green-700 dark:hover:text-green-300{% endif %}" data-tooltip="{% if llm.deactivated and 'Expensive' in llm.tags %}Requires OpenRouter API key{% endif %}">
+        <ul class="player-selector-list hidden absolute z-10 mt-2 w-full bg-white dark:bg-zinc-800 shadow-lg max-h-72 rounded-xl py-1 text-base ring-1 ring-black/10 dark:ring-white/10 overflow-auto focus:outline-none sm:text-sm">
+            {% set tag_explanations = {
+                'Fast': 'Each move usually takes less than 20s.',
+                'Open-source': 'Model weights are publicly available.',
+                'Expensive': 'Each game usually costs more than €0.50.',
+                'Deactivated': 'This model is currently unavailable.',
+                'Recommended': 'Fast, affordable and performant.'
+            } %}
+            {# -- Recommended section -- #}
+            <li class="section-header pointer-events-none select-none px-3 pt-2 pb-1">
+                <span class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-green-600 dark:text-green-400">
+                    <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+                    Recommended
+                </span>
+            </li>
+            {% for llm in llms if llm.recommended %}
+                <li data-llm-id="{{ llm.id }}" data-llm-name="{{ llm.name }}" data-llm-provider="{{ llm.provider }}" data-llm-elo="{{ llm.elo | round | int }}" data-deactivated="{{ 'true' if llm.deactivated else 'false' }}" data-expensive="{{ 'true' if 'Expensive' in llm.tags else 'false' }}" data-recommended="true" class="llm-option select-none relative py-2.5 pl-3 pr-4 text-black dark:text-gray-100 cursor-pointer hover:bg-green-50 dark:hover:bg-green-900/20 hover:text-green-700 dark:hover:text-green-300">
+                    <span class="flex items-center justify-between w-full">
+                        <div class="flex items-center">
+                            <div class="w-6 h-6 mr-2 flex-shrink-0">{{ render_logo(llm.provider, 'h-6 w-6', 'text-sm') }}</div>
+                            <span class="font-medium block truncate text-black dark:text-gray-100">{{ llm.name }}</span>
+                        </div>
+                        <div class="flex gap-1 ml-2">
+                            {% for tag in llm.tags if tag != 'Recommended' %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap 
+                                    {% if tag == 'Open-source' %}bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300
+                                    {% elif tag == 'Expensive' %}bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300
+                                    {% elif tag == 'Fast' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300
+                                    {% elif tag == 'Deactivated' %}bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300
+                                    {% else %}bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300
+                                    {% endif %}" title="{{ tag_explanations.get(tag, '') }}">
+                                    {{ tag }}
+                                </span>
+                            {% endfor %}
+                        </div>
+                    </span>
+                </li>
+            {% endfor %}
+            {# -- Separator + All models section -- #}
+            <li class="section-header pointer-events-none select-none px-3 pt-3 pb-1 border-t border-gray-200 dark:border-zinc-700 mt-1">
+                <span class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-zinc-500">All other models</span>
+            </li>
+            {% for llm in llms if not llm.recommended %}
+                <li data-llm-id="{{ llm.id }}" data-llm-name="{{ llm.name }}" data-llm-provider="{{ llm.provider }}" data-llm-elo="{{ llm.elo | round | int }}" data-deactivated="{{ 'true' if llm.deactivated else 'false' }}" data-expensive="{{ 'true' if 'Expensive' in llm.tags else 'false' }}" data-recommended="false" class="llm-option select-none relative py-2.5 pl-3 pr-4 {% if llm.deactivated %}text-gray-400 dark:text-zinc-500 cursor-default has-tooltip{% else %}text-black dark:text-gray-100 cursor-pointer hover:bg-green-50 dark:hover:bg-green-900/20 hover:text-green-700 dark:hover:text-green-300{% endif %}" data-tooltip="{% if llm.deactivated and 'Expensive' in llm.tags %}Requires OpenRouter API key{% endif %}">
                     <span class="flex items-center justify-between w-full">
                         <div class="flex items-center">
                             <div class="w-6 h-6 mr-2 flex-shrink-0">{{ render_logo(llm.provider, 'h-6 w-6', 'text-sm') }}</div>
                             <span class="font-normal block truncate {% if llm.deactivated %}text-gray-400 dark:text-zinc-500{% else %}text-black dark:text-gray-100{% endif %}">{{ llm.name }}</span>
                         </div>
                         {% if llm.tags %}
-                            {% set tag_explanations = {
-                                'Fast': 'Each move usually takes less than 20s.',
-                                'Open-source': 'Model weights are publicly available.',
-                                'Expensive': 'Each game usually costs more than €0.50.',
-                                'Deactivated': 'This model is currently unavailable.'
-                            } %}
                             <div class="flex gap-1 ml-2">
-                                {% for tag in llm.tags %}
+                                {% for tag in llm.tags if tag != 'Recommended' %}
                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap 
                                         {% if tag == 'Open-source' %}bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300
                                         {% elif tag == 'Expensive' %}bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300

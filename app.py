@@ -65,6 +65,9 @@ def index():
                 "deactivated": any(
                     (t or "").lower() in ("deactivated", "expensive") for t in tags
                 ),
+                "recommended": any(
+                    (t or "").lower() == "recommended" for t in tags
+                ),
             }
         )
 
