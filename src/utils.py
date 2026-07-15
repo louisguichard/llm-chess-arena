@@ -3,6 +3,15 @@
 import os
 
 
+def has_model_tag(model_data, tag):
+    """Return whether a model has a tag, case-insensitively."""
+    expected = tag.lower()
+    return any(
+        (value or "").lower() == expected
+        for value in model_data.get("tags", [])
+    )
+
+
 def read_models_from_file(path):
     """Read one model id per non-empty, non-comment line.
     A line can be:

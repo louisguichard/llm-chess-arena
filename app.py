@@ -11,7 +11,7 @@ from flask import stream_with_context
 import json
 import uuid
 import chess
-from src.utils import read_models_from_file
+from src.utils import has_model_tag, read_models_from_file
 from src.ratings import RatingsTable
 from src.match import ChessGame
 from src.gcp import read_json_from_gcs
@@ -47,10 +47,13 @@ def index():
     except Exception:
         pass
     models = read_models_from_file(MODELS_FILE)
+    visible_models = [
+        model for model in models if not has_model_tag(model, "Legacy")
+    ]
 
     # Prepare data for battle page
     llms = []
-    for model_data in models:
+    for model_data in visible_models:
         model_id = model_data["id"]
         display_name = model_data["name"] or model_id.split("/")[-1]
         tags = model_data.get("tags", [])
@@ -90,6 +93,8 @@ def index():
 
         # Find the display name and tags from the models list
         model_info = next((m for m in models if m["id"] == player_id), None)
+        if model_info and has_model_tag(model_info, "Legacy"):
+            continue
         display_name = (
             model_info["name"]
             if model_info and model_info["name"]
@@ -214,14 +219,18 @@ def start_game():
     if not white_model_data or not black_model_data:
         return jsonify({"error": "One or both selected models are invalid."}), 400
 
-    if "Deactivated" in white_model_data.get("tags", []):
+    if has_model_tag(white_model_data, "Deactivated") or has_model_tag(
+        white_model_data, "Legacy"
+    ):
         return jsonify(
             {
                 "error": f"{white_model_data.get('name', white_model_id)} is deactivated and cannot be used."
             }
         ), 400
 
-    if "Deactivated" in black_model_data.get("tags", []):
+    if has_model_tag(black_model_data, "Deactivated") or has_model_tag(
+        black_model_data, "Legacy"
+    ):
         return jsonify(
             {
                 "error": f"{black_model_data.get('name', black_model_id)} is deactivated and cannot be used."
