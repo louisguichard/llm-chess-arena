@@ -3,6 +3,8 @@
 # Available tags: Fast, Expensive, Open-source, Deactivated, Recommended
 
 # OpenAI
+openai/gpt-5.6-terra, GPT-5.6 Terra
+openai/gpt-5.6-luna, GPT-5.6 Luna
 openai/gpt-5.4, GPT-5.4, [Expensive]
 openai/gpt-5.4-mini, GPT-5.4 Mini, [Fast, Recommended]
 openai/gpt-5.4-nano, GPT-5.4 Nano, [Fast, Recommended]
@@ -17,6 +19,7 @@ openai/gpt-oss-120b, GPT-OSS 120B, [Open-source]
 openai/gpt-oss-20b, GPT-OSS 20B, [Open-source]
 
 # Google
+google/gemini-3.5-flash, Gemini 3.5 Flash
 google/gemini-3.1-pro-preview, Gemini 3.1 Pro, [Expensive]
 google/gemini-3.1-flash-lite-preview, Gemini 3.1 Flash Lite, [Fast, Recommended]
 google/gemini-3-pro-preview, Gemini 3 Pro, [Expensive, Deactivated]
@@ -38,6 +41,7 @@ anthropic/claude-sonnet-4.6, Claude Sonnet 4.6, [Expensive]
 anthropic/claude-opus-4.6, Claude Opus 4.6, [Expensive]
 
 # xAI
+x-ai/grok-4.5, Grok 4.5
 x-ai/grok-4.1-fast, Grok 4.1 Fast, [Expensive]
 x-ai/grok-4, Grok 4, [Expensive]
 x-ai/grok-3, Grok 3, [Expensive]
@@ -46,12 +50,14 @@ x-ai/grok-3, Grok 3, [Expensive]
 meta-llama/llama-4-maverick, Llama 4 Maverick, [Open-source, Fast]
 
 # Mistral AI
+mistralai/mistral-medium-3-5, Mistral Medium 3.5, [Open-source]
 mistralai/mistral-large-2512, Mistral Large 3, [Open-source]
 mistralai/mistral-medium-3.1, Mistral Medium 3.1, [Fast]
 mistralai/mistral-small-2603, Mistral Small 4, [Open-source, Fast, Recommended]
 mistralai/ministral-14b-2512, Ministral 14b, [Open-source]
 
 # DeepSeek
+deepseek/deepseek-v4-pro, DeepSeek V4 Pro, [Open-source]
 deepseek/deepseek-r1-0528, DeepSeek R1, [Open-source]
 deepseek/deepseek-chat-v3-0324, DeepSeek V3, [Open-source]
 deepseek/deepseek-chat-v3.1, DeepSeek V3.1, [Open-source]
@@ -68,5 +74,5 @@ minimax/minimax-m2.1, MiniMax M2.1, [Open-source, Expensive]
 minimax/minimax-m2, MiniMax M2, [Open-source]
 
 # Qwen
+qwen/qwen3.6-flash, Qwen3.6 Flash
 qwen/qwen3-30b-a3b, Qwen3 30B, [Open-source]
-
